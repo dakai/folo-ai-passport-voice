@@ -1,0 +1,16 @@
+[Unit]
+Description=AI Passport Linux voice forwarder (voxtype offline ASR)
+Documentation=https://github.com/manchunx7-bit/folo-ai-passport-voice
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Installed by linux/install.sh: points at the repo checkout. wtype needs
+# the Wayland socket, so this binds to the graphical session, not boot.
+# -u: journal  collected via pipe, not a TTY. Without it print() block-
+# buffers and beacon/discovery lines never appear live in the log.
+ExecStart=/usr/bin/python3 -u %h/Apps/folo-ai-passport-voice/linux/voice_forwarder.py
+
+[Install]
+WantedBy=graphical-session.target

@@ -28,6 +28,7 @@
 | 目录 | 内容 |
 | --- | --- |
 | `windows/` | 可运行的 Windows 转发器、ADPCM 解码、UDP 通道、诊断与测试 |
+| `linux/` | 可运行的 Linux 转发器(voxtype 本地离线识别、wtype 键入、systemd 服务安装) |
 | `device/main/apps/voice/` | 本功能的设备端状态机、协议、录音生命周期、传输和界面业务代码 |
 | `device/tests/` | 语音状态机和界面数学的可独立运行测试 |
 | `docs/` | 使用、排错、固件入口、开发与底层接口适配说明 |
@@ -37,6 +38,7 @@
 ## 文档
 
 - [详细使用教程](docs/QUICKSTART.zh-CN.md)
+- [Linux 转发器安装与使用](linux/README.md)
 - [常见故障排查](docs/TROUBLESHOOTING.zh-CN.md)
 - [官网固件与刷写注意](docs/FIRMWARE.zh-CN.md)
 - [源码运行与测试](docs/DEVELOPMENT.zh-CN.md)
