@@ -1,5 +1,9 @@
 # AI Passport 随身语音 · wireless microphone and voice hotkey
 
+<img src="https://ai-passport.folotoy.cn/api/media/plays/community-1353f966/gallery/0.webp?v=3715-4" alt="AI Passport" width="330">
+
+**Languages:** English · [中文](README.zh-CN.md) · [Español](README.es.md) · [日本語](README.ja.md)
+
 Hold the top button on your AI Passport, speak, release. The text appears in the window you are typing in; short-press the bottom button to send Enter.
 
 The device does the listening, the computer does the recognition. Two ways to run the computer side:
@@ -11,7 +15,6 @@ The device does the listening, the computer does the recognition. Two ways to ru
 | Cloud | depends on the input method | none |
 | Extras | — | optional LLM cleanup, Omarchy bar widget |
 
-**Languages:** English · [中文](README.zh-CN.md) · [Español](README.es.md) · [日本語](README.ja.md)
 
 **This repository ships the voice feature, not the whole device.** There is no flashable firmware and no full ESP-IDF project here. The firmware is published by the maintainer on the [FoloToy play page](https://ai-passport.folotoy.cn/plays/438/); if that page does not yet have a build with 随身语音, wait for the update. Never treat this repository's *Source code ZIP* as firmware.
 

@@ -1,5 +1,9 @@
 # AI Passport 随身语音 · micrófono inalámbrico y atajo de voz
 
+<img src="https://ai-passport.folotoy.cn/api/media/plays/community-1353f966/gallery/0.webp?v=3715-4" alt="AI Passport" width="330">
+
+**Idiomas:** [English](README.md) · [中文](README.zh-CN.md) · Español · [日本語](README.ja.md)
+
 Mantén pulsado el botón superior del AI Passport, habla y suelta: el texto aparece en la ventana donde estás escribiendo. Una pulsación corta del botón inferior envía Intro.
 
 El dispositivo escucha; el ordenador reconoce. Dos formas de ejecutar el lado del ordenador:
@@ -11,7 +15,6 @@ El dispositivo escucha; el ordenador reconoce. Dos formas de ejecutar el lado de
 | Nube | depende del método de entrada | ninguna |
 | Extras | — | limpieza opcional con LLM, widget de barra para Omarchy |
 
-**Idiomas:** [English](README.md) · [中文](README.zh-CN.md) · Español · [日本語](README.ja.md)
 
 **Este repositorio publica la función de voz, no el dispositivo completo.** No hay firmware grabable ni un proyecto ESP-IDF completo. El firmware lo publica el mantenedor en la [página de juegos de FoloToy](https://ai-passport.folotoy.cn/plays/438/); si esa página aún no tiene una versión con 随身语音, espera la actualización. Nunca uses el *Source code ZIP* de este repositorio como firmware.
 

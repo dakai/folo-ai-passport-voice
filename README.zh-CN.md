@@ -1,5 +1,9 @@
 # AI Passport 随身语音 · 无线麦克风与语音快捷键
 
+<img src="https://ai-passport.folotoy.cn/api/media/plays/community-1353f966/gallery/0.webp?v=3715-4" alt="AI Passport" width="330">
+
+**语言:** [English](README.md) · 中文 · [Español](README.es.md) · [日本語](README.ja.md)
+
 按住 AI Passport 上键说话，松开后文字出现在你正在输入的窗口里；核对后短按下键回车。
 
 设备负责拾音，电脑负责识别。电脑端有两种跑法：
@@ -11,7 +15,6 @@
 | 云 | 由输入法决定 | 无 |
 | 附加 | — | 可选 LLM 整理、Omarchy 栏插件 |
 
-**语言:** [English](README.md) · 中文 · [Español](README.es.md) · [日本語](README.ja.md)
 
 **本仓库只开源随身语音功能, 不含整机源码或可刷写固件。** 固件由维护者在 [FoloToy 口袋百宝箱玩法页面](https://ai-passport.folotoy.cn/plays/438/) 发布; 该页面若暂未提供包含随身语音的版本, 请等待更新。不要把本仓库的 *Source code ZIP* 当固件。
 

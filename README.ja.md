@@ -1,5 +1,9 @@
 # AI Passport 随身语音 · ワイヤレスマイクと音声ショートカット
 
+<img src="https://ai-passport.folotoy.cn/api/media/plays/community-1353f966/gallery/0.webp?v=3715-4" alt="AI Passport" width="330">
+
+**言語:** [English](README.md) · [中文](README.zh-CN.md) · [Español](README.es.md) · 日本語
+
 AI Passport の上ボタンを押したまま話し、離すと、入力中のウィンドウに文字が入ります。確認したら下ボタンを短く押すと Enter が送られます。
 
 音を拾うのはデバイス、認識するのはパソコンです。パソコン側には 2 通りの動かし方があります。
@@ -11,7 +15,6 @@ AI Passport の上ボタンを押したまま話し、離すと、入力中の�
 | クラウド | 入力方式しだい | なし |
 | 追加機能 | — | 任意の LLM 整形、Omarchy バーウィジェット |
 
-**言語:** [English](README.md) · [中文](README.zh-CN.md) · [Español](README.es.md) · 日本語
 
 **このリポジトリが公開しているのは音声機能だけであり、端末本体のソースや書き込み可能なファームウェアは含みません。** ファームウェアはメンテナーが [FoloToy のプレイページ](https://ai-passport.folotoy.cn/plays/438/) で公開しています。そのページに 随身语音 を含む版がまだ無い場合は更新を待ってください。本リポジトリの *Source code ZIP* をファームウェアとして使わないでください。
 
