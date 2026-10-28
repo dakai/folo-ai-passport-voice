@@ -75,6 +75,12 @@ python3 linux/voice_forwarder.py --diagnose   # voxtype、wtype、UDP 33333 全�
 
 `--diagnose` 不按键、不识别, 只证明这三样都可达。
 
+**能听懂什么** —— 识别语言由引擎决定, 与界面语言无关。SenseVoice 支持中文、英文、
+日文、韩文和粤语; 日文已在转发器这条路径上端到端验证。**西班牙语不在它的集合里**:
+实测时 SenseVoice 把西语语音强行识别成了韩文。要用西语就换别的引擎 —— whisper 搭配
+多语言模型(`base` / `small` / `large-v3`)并 `voxtype config set whisper.language es`,
+或 voxtype 编译进来的其它多语言引擎。LLM 整理与语言无关, 它只重排文字。
+
 **装成用户服务**
 
 ```bash

@@ -71,6 +71,8 @@ python3 linux/voice_forwarder.py --diagnose   # voxtype、wtype、UDP 33333 が�
 
 `--diagnose` は入力も認識もしません。3 つの部品に到達できることだけを示します。
 
+**何を聞き取れるか** — 認識言語はエンジンの設定で、この画面の言語とは別です。SenseVoice は中国語・英語・日本語・韓国語・広東語に対応し、日本語はフォワーダーの経路で端到端に検証済みです。**スペイン語は対象外**で、試したところ SenseVoice はスペイン語音声を韓国語として出力しました。スペイン語には別のエンジンを使ってください — whisper の多言語モデル(`base`、`small`、`large-v3`)と `voxtype config set whisper.language es`、または voxtype に組み込まれている他の多言語エンジンです。LLM 整形は言語に依存せず、文字を整えるだけです。
+
 **ユーザーサービスとしてインストール**
 
 ```bash

@@ -71,6 +71,8 @@ python3 linux/voice_forwarder.py --diagnose   # voxtype, wtype, UDP 33333 — to
 
 `--diagnose` no escribe ni reconoce nada: solo demuestra que las tres piezas son alcanzables.
 
+**Qué puede oír** — el idioma de reconocimiento es del motor, no de esta interfaz. SenseVoice cubre chino, inglés, japonés, coreano y cantonés; el dictado en japonés se verificó de punta a punta por el mismo camino que usa el forwarder. El español no está en ese conjunto: al probarlo, SenseVoice convirtió el audio español en coreano. Para español, usa otro motor — whisper con un modelo multilingüe (`base`, `small`, `large-v3`) y `voxtype config set whisper.language es`, o cualquiera de los motores multilingües que voxtype incorpora. La limpieza con LLM es independiente del idioma: solo reescribe el texto.
+
 **Instalar como servicio de usuario**
 
 ```bash

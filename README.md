@@ -71,6 +71,8 @@ python3 linux/voice_forwarder.py --diagnose   # voxtype, wtype, UDP 33333 — al
 
 `--diagnose` types nothing and recognises nothing; it only proves the three pieces are reachable.
 
+**What it can hear** — the recognition language belongs to the engine, not to this interface. SenseVoice covers Chinese, English, Japanese, Korean and Cantonese; Japanese dictation was verified end to end on the forwarder's own path. Spanish is not in that set: SenseVoice forced Spanish speech into Korean when tested. For Spanish, pick a multilingual engine instead of SenseVoice — whisper with a multilingual model (`base`, `small`, `large-v3`) and `voxtype config set whisper.language es`, or one of the multilingual engines voxtype compiles in. The LLM cleanup step is language-agnostic; it only reformats text.
+
 **Install as a user service**
 
 ```bash

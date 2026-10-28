@@ -43,6 +43,14 @@ PC EXE 来自 Python 3.11.8、sounddevice 0.5.6、PyInstaller 6.20.0，源码与
   环境 locale, `--lang es` 时模板是西语、错误详情却是英文 — 现在
   `voice_config` 有进程级语言覆盖, 回归测试
   `test_a_forced_language_reaches_the_cleanup_messages` 覆盖。
+- 2026-10-28 复验(六): 识别语言覆盖(不经过设备, 直接对 WAV 调用 `voxtype transcribe`)。
+  日语(edge-tts 合成, 16 kHz 单声道)输出 `明日の午後3時に会議があります 資料を持ってきてください。`,
+  原文 `明日の午後三時に会議があります。資料を持ってきてください。` —— 可用。
+  西班牙语输出 `마니나포르드 엔비아 모 베디도 노세아타나다.` —— SenseVoice 无西语, 被强行
+  识别成韩文。`voxtype config set sensevoice.language xx` 报错并列出合法值
+  `auto|zh|en|ja|ko|yue`, 与实测一致。
+  **未验收**: whisper 多语言模型的西语路径(本机没有下载多语言模型, 也没切换引擎),
+  只用合成语音而非真人, 噪声与口音未覆盖。
 - **未验收**: 真实设备一句完整语音经 LLM 整理后上屏; 面板内下拉/按钮的鼠标点击、
   搜索框过滤与键盘路径 (桌面持续被占用, 合成指针坐标无法核对 — `hyprctl cursorpos`
   与合成移动互相干扰; 可搜索下拉本身是 shell 自带 `qs.Ui.SearchableDropdown`);
