@@ -1,5 +1,32 @@
 # 更新日志
 
+## 未发布
+
+- Linux 转发器新增可选 **LLM 整理**: 识别原文先去掉口头语/口吃并补标点再键入,
+  默认关闭; 失败一律回退原文, 转写内容按数据处理(不回答、不执行)。
+- 新增 `linux/voice_tui.py` 终端配置器: 选 provider/模型/key、开关整理、试跑一句;
+  `status --json` / `set` / `models` 子命令供插件调用。
+- 新增 `linux/voice_config.py`: `voice-config.json` 与 `~/.local/state/ai-passport-voice/status.json`
+  的唯一读写者(配置 600 权限, 原子写入)。
+- 新增 `omarchy/` 栏插件: 麦克风图标显示服务/设备状态, 点开可重启服务、
+  切换 provider 与模型。插件不存设置, 全部经 `voice_tui.py`。
+- API key 默认存入登录密钥环 (`secret-tool`), 配置文件不再保留明文; 无 libsecret
+  时回退到 0600 文件并在面板标红提示。读取顺序: `AIPV_API_KEY` → 配置文件 → 密钥环。
+- 栏插件只显示麦克风图标 (不再带文字); 面板文案跟随系统 locale (zh/English),
+  可用 `language` 覆盖。服务未运行时面板直接给出启动命令, 按钮由「重启」变为「启动」。
+- 模型选择改为可搜索下拉, 面板打开时按当前 provider 自动取一次模型列表
+  (OpenRouter 300 个模型可直接过滤); API key 输入框占位文案写明存入密钥环。
+- 修正 `voice_tui.py models --provider X` 的 AttributeError (引用了只有 `set` 才有的参数)。
+- `voice_tui.py` 全部输出与 `llm_cleanup` 的错误/日志跟随系统 locale (zh/English),
+  `--lang` 可强制; 栏插件调用时传 `--lang`, 面板里回显的
+  "Key: 已存入登录密钥环" 一类信息不再与面板语言混用。
+- 模型列表取失败后按 provider 记住到本次会话结束 (↻ 或换 provider 才重试),
+  避免每次打开面板都重复一次被拒的请求。
+- 栏图标状态改为「图标 + 颜色」: 服务没跑用电源符号(淡化), 等设备用灰度麦克风,
+  设备已连用主题绿色麦克风; 不再用带斜杠的麦克风 (那是「静音」的语义)。
+  面板在等设备时提示到设备上打开「AI 语音」。
+- Linux 测试 17 → 54 项, 覆盖配置规范化、端点策略、失败回退、状态文件、key 存储与配置器。
+
 ## 0.2.0-app.1 · 2026-10-06
 
 - 将随身语音拆分为独立项目，仅公开本功能设备业务代码、Windows 配套程序、测试和教程。

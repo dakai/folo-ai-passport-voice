@@ -24,6 +24,19 @@ def make_args(**kw):
     return argparse.Namespace(**d)
 
 
+def setUpModule():
+    # The forwarder publishes status for the bar widget; tests must not write
+    # into the user's real state directory.
+    global _state_dir
+    _state_dir = tempfile.TemporaryDirectory()
+    os.environ["AIPV_STATUS_PATH"] = os.path.join(_state_dir.name, "status.json")
+
+
+def tearDownModule():
+    os.environ.pop("AIPV_STATUS_PATH", None)
+    _state_dir.cleanup()
+
+
 def block(seq=0):
     import adpcm
     return bytes((seq, 0x80)) + adpcm.encode_block(
@@ -34,9 +47,12 @@ class ForwarderDispatchTest(unittest.TestCase):
     def setUp(self):
         self.typed = []
         self.keys = []
+        # passthrough cleaner: tests must not read the developer's live
+        # voice-config.json, let alone call a provider
         self.fwd = v.Forwarder(
             make_args(), transcriber=lambda samples: "你好",
-            typer=self.typed.append, key_action=self.keys.append)
+            typer=self.typed.append, key_action=self.keys.append,
+            cleaner=lambda text: text)
 
     @staticmethod
     def event(name, **fields):
@@ -79,7 +95,8 @@ class ForwarderDispatchTest(unittest.TestCase):
         slow = lambda samples: (gate.wait(5), "迟到")[1]
         fwd = v.Forwarder(make_args(), transcriber=slow,
                           typer=self.typed.append,
-                          key_action=self.keys.append)
+                          key_action=self.keys.append,
+                          cleaner=lambda text: text)
         fwd.on_event(self.event("voice.start"))
         for i in range(3):
             fwd.on_audio(block(i))
@@ -115,6 +132,36 @@ class ForwarderDispatchTest(unittest.TestCase):
         st = self.fwd.pc_status()
         self.assertEqual(st["type"], "pc.status")
         self.assertTrue(st["audioReady"])
+
+    def run_utterance_with(self, cleaner):
+        typed = []
+        fwd = v.Forwarder(make_args(), transcriber=lambda samples: "嗯 你好",
+                          typer=typed.append, key_action=lambda action: None,
+                          cleaner=cleaner)
+        fwd.on_event(self.event("voice.start"))
+        for i in range(3):
+            fwd.on_audio(block(i))
+        fwd.on_event(self.event("voice.end"))
+        deadline = time.monotonic() + 5
+        while not typed and time.monotonic() < deadline:
+            time.sleep(0.01)
+        return typed
+
+    def test_cleaner_output_is_what_gets_typed(self):
+        seen = []
+
+        def cleaner(text):
+            seen.append(text)
+            return "你好。"
+
+        self.assertEqual(self.run_utterance_with(cleaner), ["你好。"])
+        self.assertEqual(seen, ["嗯 你好"])
+
+    def test_cleaner_failure_types_the_raw_transcript(self):
+        def broken(text):
+            raise RuntimeError("模型挂了")
+
+        self.assertEqual(self.run_utterance_with(broken), ["嗯 你好"])
 
 
 class AsrVoxtypeTest(unittest.TestCase):

@@ -21,6 +21,24 @@ py -3.11 -m venv .venv
 
 发布的 EXE 沿用已验证的 Python 3.11.8 / sounddevice 0.5.6 / PyInstaller 6.20.0 构建。它与这里的 Windows 源码保持一致，未加入其他整机源码。驱动和输入法不打包。
 
+## Linux 源码运行与测试
+
+Linux 端只用标准库, 不需要 venv; 系统工具按 [linux/README](../linux/README.md) 装好。
+
+```bash
+python3 linux/voice_forwarder.py --diagnose     # 检查 voxtype、wtype、UDP 33333
+python3 linux/voice_forwarder.py                # 前台运行(先停服务, 端口只有一个)
+
+python3 -m unittest discover -s linux/tests -p "test_*.py" -v
+```
+
+54 项: 识别分发/回车对账、voxtype 解析、wtype 注入、配置规范化、LLM 端点策略与
+失败回退、状态文件、配置器子命令。LLM 相关测试只连本机 loopback 桩服务, 不出网。
+
+配置与状态文件由 `linux/voice_config.py` 独占读写, 终端配置器 `linux/voice_tui.py`
+是唯一的写入入口(栏插件也调它)。API key 走 `secret-tool` 进登录密钥环, 没有
+libsecret 时回退到 0600 的配置文件; 测试用假的 `secret-tool` 脚本验证两种路径。
+
 ## 设备纯逻辑测试
 
 在 Linux、WSL 或具备 Bash、C 编译器的环境中，从仓库根目录运行：

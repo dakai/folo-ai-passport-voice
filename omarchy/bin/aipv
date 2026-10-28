@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# The plugin's only spawn target: run the forwarder checkout's configurator.
+#
+# The plugin owns no settings logic. Every read and write goes through
+# linux/voice_tui.py, which is the same program the terminal menu runs, so the
+# bar panel and the terminal can never disagree about the config.
+set -euo pipefail
+
+repo="${AIPV_REPO:-$HOME/Apps/folo-ai-passport-voice}"
+if [[ ${1:-} == --repo ]]; then
+  repo="${2:-}"
+  shift 2 || true
+fi
+
+if [[ -z $repo || ! -f $repo/linux/voice_tui.py ]]; then
+  echo "未找到转发器仓库: ${repo:-<空>} (面板设置里填 repoPath)" >&2
+  exit 2
+fi
+
+exec /usr/bin/python3 -u "$repo/linux/voice_tui.py" "$@"

@@ -21,6 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import adpcm as adpcm_mod
 import asr_voxtype
 import inject
+import llm_cleanup
+import voice_config
 from udp_transport import (
     UdpTransport, UdpError, EVENT_UUID, AUDIO_UUID)
 
@@ -32,12 +34,15 @@ MIN_UTTERANCE_BLOCKS = 3
 
 class Forwarder:
     def __init__(self, args, transcriber=None, typer=None,
-                 key_action=None):
+                 key_action=None, cleaner=None):
         self.args = args
         self.transcriber = (transcriber
                             or (lambda samples: asr_voxtype.transcribe_pcm(
                                 samples, voxtype_bin=args.voxtype_bin,
                                 engine=args.engine)))
+        # Re-reads voice-config.json per utterance, so switching provider or
+        # model in the configurator takes effect without restarting the service.
+        self.cleaner = cleaner or llm_cleanup.clean_text
         self.typer = typer or inject.type_text
         self.key_action = key_action or inject.key_action
         self.pcm_blocks = []
@@ -80,14 +85,29 @@ class Forwarder:
                 return
             if text:
                 print(f"[asr] 识别结果: {text}")
+                text = self._clean(text)
+                if seq != self._utterance_seq:
+                    return  # an Enter arrived while the model was thinking
+                if not text:
+                    return
                 try:
                     self.typer(text)
                 except inject.InjectError as e:
                     print(f"[key] {e}", file=sys.stderr)
+                else:
+                    voice_config.write_status(lastText=text)
             else:
                 print("[asr] 无语音内容,跳过输入")
 
         threading.Thread(target=work, name="asr_worker", daemon=True).start()
+
+    def _clean(self, text):
+        """LLM tidy-up, fail-open: the raw transcript is typed if it breaks."""
+        try:
+            return self.cleaner(text) or ""
+        except Exception as e:  # ponytail: an injected cleaner must not eat text
+            print(f"[llm] 整理异常, 使用原文: {e}", file=sys.stderr)
+            return text
 
     def check_health(self, now=None):
         now = time.monotonic() if now is None else now
@@ -163,10 +183,14 @@ class Forwarder:
 
     def on_disconnect(self):
         print("[link] 设备断开,丢弃缓冲;等待 beacon 自动重连...")
+        voice_config.write_status(link="waiting")
         self._utterance_seq += 1
         self.finish(cancel=True)
 
     async def run(self):
+        # Publish a first state immediately: the bar widget shows "waiting"
+        # rather than "unknown" until the device answers a beacon.
+        voice_config.write_status(link="waiting", lastError="")
         while True:
             transport = UdpTransport(port=self.args.port,
                                      device_wait_timeout=10 ** 9,
@@ -187,6 +211,8 @@ class Forwarder:
                 await transport.start_notify(AUDIO_UUID, self.on_audio)
                 print("[link] 就绪: 等待设备按键/音频(设备上打开「AI语音」, "
                       "按住 UP 说话)")
+                # The bar widget reads this file instead of parsing the journal.
+                voice_config.write_status(link="linked", lastError="")
 
                 async def status():
                     last_status = 0.0
@@ -237,14 +263,8 @@ class Forwarder:
 
 
 def load_local_config():
-    base = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base, "voice-config.json")
-    try:
-        with open(path, encoding="utf-8-sig") as f:
-            cfg = json.load(f)
-        return cfg if isinstance(cfg, dict) else {}
-    except Exception:
-        return {}
+    """voice-config.json via its single owner; defaults when absent or corrupt."""
+    return voice_config.load()
 
 
 def main(argv=None):

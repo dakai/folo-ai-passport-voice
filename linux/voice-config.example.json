@@ -2,5 +2,14 @@
   "udp_port": 33333,
   "device_ip": "",
   "voxtype_bin": "voxtype",
-  "engine": "sensevoice"
+  "engine": "sensevoice",
+  "llm": {
+    "enabled": false,
+    "provider": "off",
+    "base_url": "",
+    "model": "",
+    "api_key": "",
+    "timeout": 8.0,
+    "prompt": ""
+  }
 }

@@ -1,8 +1,17 @@
 # Linux 语音转发器(本地离线识别)
 
 设备麦克风 → Wi-Fi UDP → `voice_forwarder.py` → voxtype SenseVoice →
-`wtype` 把文字键入当前焦点窗口。无云端、无虚拟声卡, 纯标准库,
-除系统工具外零依赖。
+(可选)LLM 整理 → `wtype` 把文字键入当前焦点窗口。无云端 ASR、无虚拟声卡,
+纯标准库, 除系统工具外零依赖。
+
+两层可选增强:
+
+- **LLM 整理**: 把识别原文去掉口头语/口吃、补标点, 像 Typeless 那样直接
+  键入整理后的文字。默认关闭; 用终端配置器 `linux/voice_tui.py` 或
+  Omarchy 栏插件开启。
+- **Omarchy 栏插件**: 栏上一个麦克风图标(无文字), 点开看服务/设备状态并切换
+  provider、模型; 服务没跑时面板直接给出启动命令。见
+  [omarchy/README.md](../omarchy/README.md)。
 
 ## 前置条件: 系统工具与识别模型
 
@@ -82,11 +91,87 @@ python3 linux/voice_forwarder.py --no-asr                  # 只收音频不识�
 3. 按住设备 UP 说话, 松手后 2–4 秒文字上屏。
 4. 单击 DOWN 发送回车。极短的误触(<3 个音频块)直接丢弃, 不识别。
 
+## LLM 整理(可选)
+
+打开后,SenseVoice 的原文会先交给一个 OpenAI 兼容的模型整理, 再键入结果:
+去掉「嗯/呃/那个」、口吃和重复词、补标点分句。整理想法来自 Typeless /
+OpenWhispr 这类听写清理提示词, 提示词写在 `linux/llm_cleanup.py` 的
+`PROMPT` 里, 可用 `voice_tui.py prompt --edit` 覆盖。
+
+设计上的两条硬规则:
+
+- **失败回退原文。** 端点挂了、key 错了、超时(默认 8 秒), 都键入识别原文,
+  只多打一行警告。丢掉用户说的话是唯一不可接受的失败。
+- **转写是数据不是指令。** 提示词里写明转写内容只做整理, 不回答、不执行。
+  代码另有长度上限: 模型若在回答问题(输出远长于输入)就丢弃, 用原文。
+
+不选 provider 时这段完全不存在, 服务不会因为 LLM 未配置而多花一次网络请求。
+
+```bash
+python3 linux/voice_tui.py            # 交互菜单: provider / 模型 / key / 开关 / 测试
+python3 linux/voice_tui.py status     # 服务、设备、整理状态
+python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 只看整理效果, 不上屏
+```
+
+所有输出跟随系统 locale (zh → 中文, 其它 → English), `--lang en|zh` 可强制;
+`--help` 是双语的单行说明。栏插件调用时带 `--lang`, 所以它面板里回显的
+保存/错误信息与面板语言一致 — 不会出现一半英文一半中文。
+
+provider: `ollama` / `lmstudio` / `llamacpp`(本机, 免 key)、`openai` /
+`openrouter` / `deepseek`(https, 需 key)、`custom`(任意 OpenAI 兼容
+`base_url`, 面板里多一个 URL 输入框)。模型列表由端点 `GET /models` 现取
+(`voice_tui.py models`), 在面板里是可搜索下拉 — OpenRouter 有 300 个模型,
+输入片段即可过滤; 面板打开时自动取一次, 换 provider 重取。
+
+改配置**不需要重启服务**: 转发器每次说话都重新读 `voice-config.json`。
+
+### API key 存在哪
+
+key **默认存进登录密钥环**(`secret-tool` → gnome-keyring / kwallet, 静态加密),
+不写明文文件; 配置里的 `llm.api_key` 保持为空。读取顺序:
+
+1. 环境变量 `AIPV_API_KEY`(临时覆盖, 适合 CI 或试用)
+2. `voice-config.json` 的 `llm.api_key`(旧配置兼容)
+3. 登录密钥环
+
+没有 `secret-tool` 的机器回退到 `voice-config.json`(权限 600, gitignored),
+栏面板会把这一行标红并提示重新输入一次即可移入密钥环。key 按 provider 分别保存,
+换 provider 不会串; `voice_tui.py set --clear-key` 清掉当前 provider 的条目。
+插件与配置器都通过 stdin 传 key, 不出现在 `ps`。
+
 ## 配置
 
 `linux/voice-config.json`(gitignored, 永不提交)。
 留空 `device_ip` 即自动探测, 只有广播被路由器 AP 隔离挡死
 且自动探测也找不到时才需要填设备 IP(去路由器客户端列表查)。
+
+```json
+{
+  "udp_port": 33333,
+  "device_ip": "",
+  "voxtype_bin": "voxtype",
+  "engine": "sensevoice",
+  "llm": {
+    "enabled": false,
+    "provider": "off",
+    "base_url": "",
+    "model": "",
+    "api_key": "",
+    "timeout": 8.0,
+    "prompt": ""
+  }
+}
+```
+
+`llm` 整段可以省略(缺省即关闭)。`api_key` 留空是正常状态: key 在密钥环里。`prompt` 留空用内置提示词; 自定义时用
+`%s` 标记转写文本该插入的位置, 没有 `%s` 就接在末尾。
+`voice_tui.py` 是这份文件唯一的写入者: 终端菜单和栏插件调的是同一个程序。
+
+## 状态文件
+
+转发器把 `link`(linked/waiting)、最近上屏文字、最后一次错误写进
+`~/.local/state/ai-passport-voice/status.json`。栏插件读它而不是解析
+journal。文件是只读参考, 删掉会自行重建。
 
 ## 排错
 
@@ -98,10 +183,30 @@ python3 linux/voice_forwarder.py --no-asr                  # 只收音频不识�
 | `[asr] 识别失败` | `voxtype config get engine` 是否 sensevoice? 模型目录 `~/.local/share/voxtype/models/sensevoice-small/` 是否存在? |
 | 文字进了错误的窗口 | `wtype` 键入焦点窗口, 先点对输入框 |
 | 短按冒出单个怪字 | SenseVoice 对静音的幻觉, 短按过滤 + VAD 正常会吃掉; 检查 voxtype 侧 VAD 是否开了 |
+| 日志 `[llm] 整理失败, 使用原文` | 原文仍会上屏, 只是没整理。`voice_tui.py test "一句话"` 看具体原因: key 401/403、模型名不对、端点不通 |
+| 整理后少了内容或答非所问 | 换更听话的模型(本机 qwen2.5、deepseek-chat 都比小模型稳), 或换自定义提示词 |
+| 面板提示 `Key: 明文存在 voice-config.json` | 没装 `secret-tool`(libsecret)或存过旧格式; 装好后重新输入一次 key 即移入密钥环 |
+| 服务在密钥环里读不到 key | 服务是 systemd user 单元, 需要会话总线: `systemctl --user show-environment | grep DBUS` 应有值; 密钥环未解锁时先登录解锁一次 |
 
 网络分不清是转发器问题还是路由器问题时, 用 `--no-asr`
 区分: 收到音频块但不识别 = 网络通, 问题在识别侧;
 连音频块都没有 = 报文没到, 问题在网络侧。
+
+## Omarchy 栏插件(可选)
+
+```bash
+bash omarchy/install.sh     # 同步到 ~/.config/omarchy/plugins/ 并放进栏的右区
+```
+
+栏上只有图标: 电源符号 + 淡化 = 服务没跑; 灰度麦克风 = 服务在跑等设备;
+绿色麦克风 = 设备已连接 (绿色取当前主题的 `green`)。
+点开是面板: 服务/设备状态、最近一条上屏文字、最近一次错误、启动/重启,
+以及整理开关 + provider / 模型下拉(含「取模型」按钮) + API key 输入框。
+服务没跑时面板直接列出启动命令。文案跟随系统 locale (zh/English),
+`omarchy bar set manchunx7.ai-passport-voice language zh` 可强制。
+插件不自己存设置, 所有读写都调这份 `voice_tui.py`, 所以和终端菜单永远一致。
+设置项只有 `language` 和 `repoPath`(仓库不在默认位置时填)。详见
+[omarchy/README.md](../omarchy/README.md)。
 
 ## 测试
 
@@ -109,5 +214,5 @@ python3 linux/voice_forwarder.py --no-asr                  # 只收音频不识�
 python3 -m unittest discover -s linux/tests -p "test_*.py" -v
 ```
 
-17 个测试, 标准库 unittest, 伪造转写器/voxtype 二进制/按键,
-不碰真实硬件。改 `linux/` 后必跑。
+53 个测试, 标准库 unittest, 伪造转写器/voxtype 二进制/按键,
+LLM 只打本机 loopback 桩服务。不碰真实硬件、不出网。改 `linux/` 后必跑。

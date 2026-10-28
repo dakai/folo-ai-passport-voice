@@ -18,6 +18,13 @@ Flow on device:
 - Executors start or stop capture, send uplink JSON, play tones, and render a UI snapshot.
 - `audio_streamer.c` captures audio, encodes ADPCM, and sends UDP frames. A session token cancels stale sessions.
 
+Flow on Linux (the only place an LLM is involved):
+
+- `voice_forwarder.py` receives events, buffers ADPCM, and runs `asr_voxtype.transcribe_pcm` in a worker thread.
+- If cleanup is enabled, `llm_cleanup.clean_text` rewrites the transcript (filler words, stutters, punctuation) and fails open to the raw text on any error.
+- `inject.type_text` types the result; `voice_config.write_status` publishes link/text/error state for the configurator and the Omarchy widget.
+- `voice_tui.py` is the single writer of `voice-config.json`; the bar widget (`omarchy/`) shells out to it for both reads and writes.
+
 Flow on Windows:
 
 - `windows/hotkey_forwarder.py` runs an asyncio `Forwarder` loop.
@@ -79,6 +86,22 @@ python3 linux/voice_forwarder.py --diagnose
 python3 linux/voice_forwarder.py
 ```
 
+Configure LLM cleanup and read forwarder status (also the plugin's backend):
+
+```bash
+python3 linux/voice_tui.py                              # interactive menu
+python3 linux/voice_tui.py status [--json]               # service, link, cleanup state
+python3 linux/voice_tui.py set --provider openai --enable
+python3 linux/voice_tui.py models                        # GET /models on the endpoint
+python3 linux/voice_tui.py test "呃 那个 the the 明天发货"  # cleanup only, no injection
+```
+
+Install the Omarchy widget (copies `omarchy/` into the plugins dir and enables it):
+
+```bash
+bash omarchy/install.sh
+```
+
 Run device host tests from the repo root on Linux, WSL, or any host with Bash and a C compiler:
 
 ```bash
@@ -112,6 +135,10 @@ CI in `.github/workflows/checks.yml` runs three jobs. The `windows` job installs
 
 - `windows/hotkey_forwarder.py`: companion entry point, `Forwarder`, `KeyInjector`, `AudioSink`, config load, CLI flags.
 - `windows/udp_transport.py`: Python side of the UDP wire spec with port and frame-type constants.
+- `linux/voice_config.py`: sole reader/writer of `voice-config.json` (0600, atomic), `~/.local/state/ai-passport-voice/status.json`, and the API key (`secret-tool` keyring first, config file only as the no-libsecret fallback; resolution order env → file → keyring).
+- `linux/llm_cleanup.py`: OpenAI-compatible transcript cleanup, provider catalog, `PROMPT`, fail-open wrapper. Its messages and `voice_tui.py`'s output are bilingual via `voice_config.resolve_lang()`; the plugin passes `--lang` so echoed lines match the panel.
+- `linux/voice_tui.py`: interactive configurator plus the `status`/`set`/`models`/`test`/`service` subcommands the plugin calls.
+- `omarchy/BarWidget.qml`, `omarchy/Panel.qml`: the widget (icon only) and its panel (searchable model picker fed by `models --provider`); `omarchy/I18n.js` holds the zh/en panel copy; `omarchy/bin/aipv` is the only spawn target.
 - `windows/adpcm.py`: Python IMA ADPCM codec. Align it with `device/main/apps/voice/adpcm.c`.
 - `windows/diagnose_voice.py`: read-only bridge diagnostics.
 - `linux/voice_forwarder.py`: Linux entry point, `Forwarder`, voxtype ASR thread, wtype injection.
@@ -159,7 +186,9 @@ Windows suite:
 
 Linux suite:
 
-- File is `linux/tests/test_voice_forwarder_unit.py` with 17 tests, stdlib unittest only.
+- Forwarder dispatch lives in `linux/tests/test_voice_forwarder_unit.py`; config, cleanup, key storage and the configurator in `linux/tests/test_llm_cleanup_unit.py`. 54 tests total, stdlib unittest only.
+- LLM tests start a loopback `http.server` stub; nothing leaves the machine. Keyring tests put a fake `secret-tool` on PATH, so they never touch the real keyring.
+- The forwarder tests inject a passthrough cleaner, so they never read the developer's live `voice-config.json`. Set `AIPV_STATUS_PATH` (the test modules do) to keep status writes out of `~/.local/state`.
 - Tests inject fake transcriber, typer, and key-action callables. They fake the voxtype binary with a Python stub script. They never touch real hardware.
 - Covered areas include voice-end transcription, short-tap skip, Enter reconciliation, late-ASR drop, duplicate audio dedup, silence timeout, WAV format, parser edge cases, dry-run injection, and broadcast enumeration.
 
@@ -171,6 +200,7 @@ Device suite:
 
 Known gaps:
 
+- The Omarchy widget has no automated test; it is verified by `omarchy-plugin validate` plus `omarchy-shell manchunx7.ai-passport-voice probe` on a live shell.
 - `windows/adpcm.py` has no tests in this repo. Referenced vector files `tests/test_adpcm.py` and `tests/test_adpcm.c` do not exist here. Cross-language drift stays undetected.
 - `windows/udp_transport.py` has no tests.
 - Real key injection, real audio endpoints, `main()`, and long-run behavior have no automated tests. `docs/VALIDATION.md` records hardware evidence and lists unverified items.
