@@ -154,6 +154,54 @@ class StatusTest(unittest.TestCase):
         self.assertEqual(voice_config.read_status(), {})
 
 
+class LanguageTest(unittest.TestCase):
+    """Four UI languages, four complete tables."""
+
+    def test_locale_resolves_to_a_shipped_table(self):
+        saved = {name: os.environ.pop(name, None)
+                 for name in ("LC_ALL", "LC_MESSAGES", "LANG")}
+        try:
+            for locale, expected in (("es_MX.UTF-8", "es"), ("ja_JP.UTF-8", "ja"),
+                                     ("zh_CN.UTF-8", "zh"), ("en_GB.UTF-8", "en"),
+                                     ("C.UTF-8", "en")):
+                os.environ["LANG"] = locale
+                self.assertEqual(voice_config.resolve_lang(), expected, locale)
+            os.environ["LANG"] = "ja_JP.UTF-8"
+            self.assertEqual(voice_config.resolve_lang("es"), "es")  # explicit wins
+            self.assertEqual(voice_config.resolve_lang("auto"), "ja")
+        finally:
+            for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+                os.environ.pop(name, None)
+                if saved[name] is not None:
+                    os.environ[name] = saved[name]
+
+    def test_every_language_has_every_string(self):
+        for code in voice_config.LANGUAGES:
+            self.assertEqual(set(voice_tui.TEXT[code]), set(voice_tui.TEXT["en"]), code)
+            self.assertEqual(set(llm_cleanup.TEXT[code]), set(llm_cleanup.TEXT["en"]), code)
+            for status in llm_cleanup.MESSAGES:
+                self.assertIn(code, llm_cleanup.MESSAGES[status], status)
+
+    def test_a_forced_language_reaches_the_cleanup_messages(self):
+        # Regression: `status --lang es` localised the template but llm_cleanup
+        # still read the shell locale, so a Spanish panel showed an English 401.
+        saved = voice_tui.set_lang("es")
+        try:
+            self.assertEqual(llm_cleanup.tr("noModel"), "no hay modelo seleccionado")
+            with self.assertRaises(llm_cleanup.CleanupError) as caught:
+                llm_cleanup.clean("hola", {"enabled": True, "provider": "custom",
+                                           "model": ""})
+            self.assertEqual(str(caught.exception), "no hay modelo seleccionado")
+        finally:
+            voice_tui.set_lang(saved)
+            voice_config.set_lang_override(None)
+
+    def test_provider_labels_are_localised_but_brands_are_not(self):
+        self.assertNotEqual(llm_cleanup.label_for("custom", "ja"),
+                            llm_cleanup.label_for("custom", "en"))
+        self.assertEqual(llm_cleanup.label_for("openai", "es"), "OpenAI")
+
+
 class EndpointPolicyTest(unittest.TestCase):
     def test_loopback_http_allowed(self):
         self.assertTrue(llm_cleanup.base_url(llm_config(base_url="http://127.0.0.1:1234/v1")))

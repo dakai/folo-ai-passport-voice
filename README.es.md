@@ -112,7 +112,8 @@ El icono tiene tres estados:
 
 Haz clic para abrir el panel: estado del servicio y del enlace, el último texto reconocido, el último error, iniciar/reiniciar y — cuando el servicio está caído — los dos comandos que lo arreglan. Debajo: interruptor de limpieza con LLM, selector de proveedor y de modelo (con búsqueda) y el campo de API key. Las claves van al llavero de inicio de sesión (`secret-tool`), nunca a un archivo en claro; el panel lo indica si solo queda el archivo como alternativa.
 
-El widget no guarda ajustes propios: toda lectura y escritura pasa por `linux/voice_tui.py`, el mismo programa que el menú de terminal, así que ambos nunca se contradicen. Sus únicas claves son `language` (`auto`, `en`, `zh`) y `repoPath`:
+El widget no guarda ajustes propios: toda lectura y escritura pasa por `linux/voice_tui.py`, el mismo programa que el menú de terminal, así que ambos nunca se contradicen. Sus únicas claves son `language` (`auto`, `en`, `es`, `ja`, `zh`) y `repoPath` —
+`auto` sigue el locale del escritorio:
 
 ```bash
 omarchy bar set manchunx7.ai-passport-voice language zh

@@ -37,6 +37,12 @@ PC EXE 来自 Python 3.11.8、sounddevice 0.5.6、PyInstaller 6.20.0，源码与
   为前景色麦克风; 把 `status.json` 的 `link` 临时改为 `linked` 后为绿色麦克风
   (取自主题 `colors.toml` 的 `green`), 随后重启服务恢复。面板在等设备时显示
   "Open “AI voice” on the device…" 提示。
+- 2026-10-28 复验(五): 界面语言扩到四种。`status --lang es|ja` 与 `LANG=ja_JP.UTF-8`
+  都输出对应语言; 面板 `language` 设为 `es` / `ja` 后截图确认整块面板(含 provider
+  标签与取模型失败的 401)同语言。顺带修掉一个混合语言缺陷: `llm_cleanup` 只读
+  环境 locale, `--lang es` 时模板是西语、错误详情却是英文 — 现在
+  `voice_config` 有进程级语言覆盖, 回归测试
+  `test_a_forced_language_reaches_the_cleanup_messages` 覆盖。
 - **未验收**: 真实设备一句完整语音经 LLM 整理后上屏; 面板内下拉/按钮的鼠标点击、
   搜索框过滤与键盘路径 (桌面持续被占用, 合成指针坐标无法核对 — `hyprctl cursorpos`
   与合成移动互相干扰; 可搜索下拉本身是 shell 自带 `qs.Ui.SearchableDropdown`);

@@ -113,7 +113,8 @@ python3 linux/voice_tui.py status     # 服务、设备、整理状态
 python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 只看整理效果, 不上屏
 ```
 
-所有输出跟随系统 locale (zh → 中文, 其它 → English), `--lang en|zh` 可强制;
+所有输出跟随系统 locale (zh → 中文, ja → 日本語, es → Español, 其它 → English),
+`--lang en|es|ja|zh` 可强制;
 `--help` 是双语的单行说明。栏插件调用时带 `--lang`, 所以它面板里回显的
 保存/错误信息与面板语言一致 — 不会出现一半英文一半中文。
 

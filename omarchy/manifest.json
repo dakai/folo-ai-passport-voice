@@ -37,10 +37,12 @@
         "options": [
           "auto",
           "en",
+          "es",
+          "ja",
           "zh"
         ],
         "defaultValue": "auto",
-        "description": "auto follows the shell locale: zh → Chinese, anything else → English."
+        "description": "auto follows the shell locale: zh → Chinese, ja → Japanese, es → Spanish, anything else → English."
       },
       {
         "key": "repoPath",

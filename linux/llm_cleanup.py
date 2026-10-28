@@ -39,32 +39,54 @@ PROVIDERS = {
     "deepseek": ("https://api.deepseek.com/v1", "deepseek-chat", False),
     "custom": ("", "", False),
 }
+# Brand names are identical everywhere; only the qualifiers are translated.
 PROVIDER_LABELS = {
-    "off": "关闭 (只用本地识别)",
-    "ollama": "Ollama (本机)",
-    "lmstudio": "LM Studio (本机)",
-    "llamacpp": "llama.cpp (本机)",
-    "openrouter": "OpenRouter",
-    "openai": "OpenAI",
-    "deepseek": "DeepSeek",
-    "custom": "自定义 (OpenAI 兼容)",
-}
-# Brand names are the same in both; only the qualifiers are translated.
-PROVIDER_LABELS_EN = {
-    "off": "Off (local transcript only)",
-    "ollama": "Ollama (local)",
-    "lmstudio": "LM Studio (local)",
-    "llamacpp": "llama.cpp (local)",
-    "openrouter": "OpenRouter",
-    "openai": "OpenAI",
-    "deepseek": "DeepSeek",
-    "custom": "Custom (OpenAI-compatible)",
+    "en": {
+        "off": "Off (local transcript only)",
+        "ollama": "Ollama (local)",
+        "lmstudio": "LM Studio (local)",
+        "llamacpp": "llama.cpp (local)",
+        "openrouter": "OpenRouter",
+        "openai": "OpenAI",
+        "deepseek": "DeepSeek",
+        "custom": "Custom (OpenAI-compatible)",
+    },
+    "es": {
+        "off": "Desactivada (solo transcripción local)",
+        "ollama": "Ollama (local)",
+        "lmstudio": "LM Studio (local)",
+        "llamacpp": "llama.cpp (local)",
+        "openrouter": "OpenRouter",
+        "openai": "OpenAI",
+        "deepseek": "DeepSeek",
+        "custom": "Personalizado (compatible con OpenAI)",
+    },
+    "ja": {
+        "off": "オフ (ローカル認識の原文のみ)",
+        "ollama": "Ollama (ローカル)",
+        "lmstudio": "LM Studio (ローカル)",
+        "llamacpp": "llama.cpp (ローカル)",
+        "openrouter": "OpenRouter",
+        "openai": "OpenAI",
+        "deepseek": "DeepSeek",
+        "custom": "カスタム (OpenAI 互換)",
+    },
+    "zh": {
+        "off": "关闭 (只用本地识别)",
+        "ollama": "Ollama (本机)",
+        "lmstudio": "LM Studio (本机)",
+        "llamacpp": "llama.cpp (本机)",
+        "openrouter": "OpenRouter",
+        "openai": "OpenAI",
+        "deepseek": "DeepSeek",
+        "custom": "自定义 (OpenAI 兼容)",
+    },
 }
 
 
-def label_for(provider, lang="zh"):
-    """Display name for a provider in one of the two documented languages."""
-    table = PROVIDER_LABELS_EN if lang == "en" else PROVIDER_LABELS
+def label_for(provider, lang="en"):
+    """Display name for a provider in the given UI language."""
+    table = PROVIDER_LABELS.get(lang) or PROVIDER_LABELS["en"]
     return table.get(provider, provider)
 OFF = "off"
 
@@ -110,13 +132,22 @@ PROMPT = (
 # `resolve_lang` is shared with the configurator so the panel and its backend
 # agree; a desktop set to Chinese never sees half an English panel.
 MESSAGES = {
-    401: {"zh": "API key 被拒绝 (401)", "en": "API key rejected (401)"},
-    403: {"zh": "API key 无权使用该模型 (403)",
-          "en": "API key may not use this model (403)"},
-    404: {"zh": "端点或模型不存在 (404)",
-          "en": "endpoint or model not found (404)"},
-    429: {"zh": "请求过于频繁或额度用尽 (429)",
-          "en": "rate limited or out of credit (429)"},
+    401: {"en": "API key rejected (401)",
+          "es": "API key rechazada (401)",
+          "ja": "API key が拒否されました (401)",
+          "zh": "API key 被拒绝 (401)"},
+    403: {"en": "API key may not use this model (403)",
+          "es": "la API key no puede usar este modelo (403)",
+          "ja": "このモデルを使う権限がありません (403)",
+          "zh": "API key 无权使用该模型 (403)"},
+    404: {"en": "endpoint or model not found (404)",
+          "es": "endpoint o modelo inexistente (404)",
+          "ja": "エンドポイントまたはモデルが存在しません (404)",
+          "zh": "端点或模型不存在 (404)"},
+    429: {"en": "rate limited or out of credit (429)",
+          "es": "demasiadas solicitudes o sin saldo (429)",
+          "ja": "リクエスト過多または残高不足 (429)",
+          "zh": "请求过于频繁或额度用尽 (429)"},
 }
 
 TEXT = {
@@ -156,11 +187,47 @@ TEXT = {
         "empty": "[llm] nothing usable in the reply ({elapsed:.1f}s), skipping input",
         "done": "[llm] cleaned in {elapsed:.1f}s → {text}",
     },
+    "es": {
+        "noProvider": "no hay provider seleccionado",
+        "customNoBaseUrl": "el provider personalizado necesita base_url",
+        "badUrl": "base_url no es una URL http(s): {url}",
+        "connect": "no se pudo conectar: {reason}",
+        "timeout": "tiempo agotado ({seconds:.0f}s)",
+        "tooLarge": "respuesta demasiado grande",
+        "notJson": "la respuesta no es JSON",
+        "noChoices": "la respuesta no trae choices",
+        "noText": "la respuesta no trae texto",
+        "answered": "el modelo respondió en vez de formatear; descartado",
+        "noModel": "no hay modelo seleccionado",
+        "tooLong": "[llm] texto demasiado largo ({chars} caracteres), se omite la limpieza",
+        "failed": "[llm] limpieza fallida, se usa el texto original: {error}",
+        "crashed": "[llm] error en la limpieza, se usa el texto original: {error}",
+        "empty": "[llm] la respuesta no tiene contenido utilizable ({elapsed:.1f}s), no se escribe nada",
+        "done": "[llm] limpiado en {elapsed:.1f}s → {text}",
+    },
+    "ja": {
+        "noProvider": "provider が選択されていません",
+        "customNoBaseUrl": "カスタム provider には base_url が必要です",
+        "badUrl": "base_url が http(s) の URL ではありません: {url}",
+        "connect": "接続に失敗: {reason}",
+        "timeout": "タイムアウト ({seconds:.0f} 秒)",
+        "tooLarge": "応答が大きすぎます",
+        "notJson": "応答が JSON ではありません",
+        "noChoices": "応答に choices がありません",
+        "noText": "応答にテキストがありません",
+        "answered": "モデルが整形ではなく回答したため破棄",
+        "noModel": "モデルが選択されていません",
+        "tooLong": "[llm] テキストが長すぎます ({chars} 文字) — 整形を省略",
+        "failed": "[llm] 整形に失敗、原文を使用: {error}",
+        "crashed": "[llm] 整形で例外、原文を使用: {error}",
+        "empty": "[llm] 有効な内容が無いと判断 ({elapsed:.1f}s)、入力を省略",
+        "done": "[llm] 整形完了 {elapsed:.1f}s → {text}",
+    },
 }
 
 
 def tr(key, **fields):
-    table = TEXT[voice_config.resolve_lang()]
+    table = TEXT.get(voice_config.resolve_lang()) or TEXT["en"]
     return table[key].format(**fields) if fields else table[key]
 
 
@@ -224,7 +291,8 @@ def _request(llm, path, payload=None, timeout=None, limit=1024 * 1024):
         with urllib.request.urlopen(request, timeout=timeout or seconds) as response:
             raw = response.read(limit + 1)
     except urllib.error.HTTPError as error:
-        hint = MESSAGES[error.code][voice_config.resolve_lang()] \
+        hint = MESSAGES[error.code].get(voice_config.resolve_lang(), "") \
+            or MESSAGES[error.code]["en"] \
             if error.code in MESSAGES else f"HTTP {error.code}"
         raise CleanupError(hint) from error
     except urllib.error.URLError as error:

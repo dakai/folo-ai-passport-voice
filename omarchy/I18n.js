@@ -1,6 +1,6 @@
 .pragma library
 
-// Panel copy in the two languages this project is documented in.
+// Panel copy in the four languages this project ships tables for.
 //
 // Qt.locale() inside a layer-shell widget follows the shell process's LANG, not
 // a desktop preference, so the language is resolved from the locale name with an
@@ -88,14 +88,99 @@ var STRINGS = {
     restarting: "重启中…",
     starting: "启动中…",
     failed: "失败"
+  },
+  es: {
+    title: "Voz de AI Passport",
+    stateLoading: "leyendo estado…",
+    stateDown: "servicio detenido",
+    stateWaiting: "esperando dispositivo",
+    stateLinked: "dispositivo conectado",
+    serviceRunning: "ai-passport-voice.service en marcha",
+    serviceStopped: "ai-passport-voice.service detenido",
+    last: "Último",
+    llmTitle: "Limpieza con LLM (muletillas, puntuación)",
+    llmOff: "desactivada: se escribe la transcripción original",
+    provider: "Proveedor",
+    model: "Modelo",
+    fetchModels: "Obtener la lista de modelos del endpoint",
+    modelHint: "Pulsa ↻ para obtener modelos, o: voice_tui.py set --model <nombre>",
+    keyNewKeyring: "API key · se guardará en el llavero de sesión",
+    keyNewFile: "API key · sin secret-tool, se guardará en el archivo de configuración",
+    keyStoredKeyring: "Clave guardada en el llavero · escribe otra para reemplazarla",
+    keyStoredFile: "Clave guardada en texto claro · vuelve a escribirla para moverla al llavero",
+    keyStoredEnv: "La clave viene de AIPV_API_KEY · escribirla guarda una copia",
+    keyFileWarning: "La clave está en claro en voice-config.json — vuelve a introducirla una vez para moverla al llavero",
+    modelPick: "Elegir un modelo",
+    modelSearch: "Buscar modelos…",
+    modelEmpty: "Sin coincidencias",
+    fetchingModels: "obteniendo modelos…",
+    modelsFound: "{count} modelos",
+    modelsNone: "el endpoint no devolvió modelos",
+    savedNote: "guardado · se aplica al instante",
+    saving: "guardando…",
+    savingKey: "guardando clave…",
+    noteDefault: "Los cambios se aplican al instante, sin reiniciar. Terminal: linux/voice_tui.py",
+    waitingTip: "Abre «AI voice» en el dispositivo y mantén pulsado el botón superior para hablar",
+    tipServiceDown: "El servicio no está en marcha. Inícialo:\n" +
+      "systemctl --user start ai-passport-voice.service\n" +
+      "Primera instalación: bash linux/install.sh",
+    actionStart: "Iniciar el servicio del forwarder",
+    actionRestart: "Reiniciar el servicio del forwarder",
+    restarting: "reiniciando…",
+    starting: "iniciando…",
+    failed: "falló"
+  },
+  ja: {
+    title: "AI Passport 音声",
+    stateLoading: "状態を読み込み中…",
+    stateDown: "サービス停止中",
+    stateWaiting: "デバイス待ち",
+    stateLinked: "デバイス接続済み",
+    serviceRunning: "ai-passport-voice.service 稼働中",
+    serviceStopped: "ai-passport-voice.service 停止中",
+    last: "最近",
+    llmTitle: "LLM 整形 (フィラー・句読点)",
+    llmOff: "オフ: 認識した原文をそのまま入力",
+    provider: "プロバイダー",
+    model: "モデル",
+    fetchModels: "エンドポイントからモデル一覧を取得",
+    modelHint: "↻ でモデルを取得、または: voice_tui.py set --model <名前>",
+    keyNewKeyring: "API key · ログインキーリングに保存します",
+    keyNewFile: "API key · secret-tool が無いため設定ファイルに保存します",
+    keyStoredKeyring: "キーはログインキーリングに保存済み · 新しいキーで置き換え",
+    keyStoredFile: "キーは平文で保存済み · もう一度入力するとキーリングへ移ります",
+    keyStoredEnv: "キーは AIPV_API_KEY から取得 · 入力すると複製を保存",
+    keyFileWarning: "キーが voice-config.json に平文であります — 一度入力し直すとキーリングへ移ります",
+    modelPick: "モデルを選択",
+    modelSearch: "モデルを検索…",
+    modelEmpty: "一致なし",
+    fetchingModels: "モデルを取得中…",
+    modelsFound: "{count} 個のモデル",
+    modelsNone: "モデルが返されませんでした",
+    savedNote: "保存しました · すぐ反映",
+    saving: "保存中…",
+    savingKey: "キーを保存中…",
+    noteDefault: "変更は再起動なしで反映されます。ターミナル: linux/voice_tui.py",
+    waitingTip: "デバイスで「AI 语音」を開き、上ボタンを押したまま話してください",
+    tipServiceDown: "サービスが動いていません。起動:\n" +
+      "systemctl --user start ai-passport-voice.service\n" +
+      "初回インストール: bash linux/install.sh",
+    actionStart: "フォワーダーサービスを起動",
+    actionRestart: "フォワーダーサービスを再起動",
+    restarting: "再起動中…",
+    starting: "起動中…",
+    failed: "失敗"
   }
 }
 
 function lang(override, localeName) {
   var forced = String(override || "")
-  if (forced === "en" || forced === "zh") return forced
+  if (STRINGS[forced]) return forced
   var name = String(localeName || "").toLowerCase()
-  return name.indexOf("zh") === 0 ? "zh" : "en"
+  for (var code in STRINGS) {
+    if (name.indexOf(code) === 0) return code
+  }
+  return "en"
 }
 
 function text(langCode, key) {

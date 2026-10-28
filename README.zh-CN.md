@@ -112,7 +112,8 @@ omarchy restart shell        # 图标没出现才需要; 热重载不会重建�
 
 点开面板: 服务与设备状态、最近一条上屏文字、最近一次错误、启动/重启; 服务没跑时直接列出两条修复命令。再往下是整理开关、provider、可搜索的模型下拉、API key 输入框。key 存进登录密钥环(`secret-tool`), 不落明文文件; 只能回退到文件时面板会写明。
 
-插件自身不存设置: 所有读写都调用 `linux/voice_tui.py` —— 与终端菜单是同一个程序, 所以两边永远一致。它自己的键只有 `language`(`auto` / `en` / `zh`)和 `repoPath`:
+插件自身不存设置: 所有读写都调用 `linux/voice_tui.py` —— 与终端菜单是同一个程序, 所以两边永远一致。它自己的键只有 `language`(`auto` / `en` / `es` / `ja` / `zh`)和 `repoPath` ——
+`auto` 跟随桌面 locale:
 
 ```bash
 omarchy bar set manchunx7.ai-passport-voice language zh

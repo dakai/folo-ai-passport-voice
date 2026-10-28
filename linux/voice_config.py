@@ -246,21 +246,48 @@ def store_api_key(cfg, key):
     return "file"
 
 
+# Languages with a full string table. Adding one means adding a table to
+# voice_tui.TEXT, llm_cleanup.TEXT/MESSAGES and omarchy/I18n.js STRINGS;
+# `language` in the widget settings takes "auto" plus these codes.
+LANGUAGES = ("en", "es", "ja", "zh")
+
+
+# Pinned by the configurator when --lang or the widget forces a language, so
+# every module that speaks to the user — including llm_cleanup, which has no
+# flag of its own — uses the same one. Stays None in the forwarder, where the
+# journal should follow the machine's locale.
+_LANG_OVERRIDE = None
+
+
+def set_lang_override(code):
+    """Pin this process's UI language; an unknown code clears the pin."""
+    global _LANG_OVERRIDE
+    _LANG_OVERRIDE = code if code in LANGUAGES else None
+
+
 def resolve_lang(value="auto"):
-    """zh when the environment speaks Chinese, en otherwise.
+    """The language this project speaks with this machine.
+
+    An explicit code wins, then a pinned override, then the locale. Only the
+    language part of the locale is used, so zh_CN.UTF-8, es_419 and ja_JP map
+    to their tables and anything else (C, POSIX, a language without a table)
+    falls back to English.
 
     Shared by the configurator and the cleanup messages so one desktop does not
     end up with half a panel in each language.
     """
-    if value in ("en", "zh"):
+    if value in LANGUAGES:
         return value
+    if _LANG_OVERRIDE:
+        return _LANG_OVERRIDE
     probe = ""
     for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
         candidate = os.environ.get(name, "")
         if candidate:
             probe = candidate.lower()
             break
-    return "zh" if probe.startswith("zh") else "en"
+    head = probe.split(".")[0].split("_")[0].split("-")[0]
+    return head if head in LANGUAGES else "en"
 
 
 def status_path():

@@ -25,6 +25,9 @@ Panel {
   property var helper: []
 
   readonly property string lang: I18n.lang(root.setting("language", "auto"), Qt.locale().name)
+  // The note holds a finished sentence from the configurator, not a key, so a
+  // language switch would leave one line in the old language. Drop it instead.
+  onLangChanged: root.note = ""
   function t(key) { return I18n.text(root.lang, key) }
 
   readonly property var status: root.host ? root.host.status : ({})

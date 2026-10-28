@@ -112,7 +112,8 @@ The icon carries three states:
 
 Click it for the panel: service and link state, the last recognised text, the last error, start/restart, and — when the service is down — the two commands that fix it. Below that: the LLM cleanup switch, provider and searchable model picker, and the API key field. Keys go to the login keyring (`secret-tool`), never to a plain file; the panel says so when only the file fallback is available.
 
-The widget stores no settings of its own: every read and write goes through `linux/voice_tui.py`, the same program as the terminal menu, so the two can never disagree. Its only own keys are `language` (`auto`, `en`, `zh`) and `repoPath`:
+The widget stores no settings of its own: every read and write goes through `linux/voice_tui.py`, the same program as the terminal menu, so the two can never disagree. Its only own keys are `language` (`auto`, `en`, `es`, `ja`, `zh`) and `repoPath` —
+`auto` follows the desktop locale:
 
 ```bash
 omarchy bar set manchunx7.ai-passport-voice language zh

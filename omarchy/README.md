@@ -28,7 +28,8 @@ foreground/accent/urgent/muted, 所以插件自己读这一个值; 读不到回�
   `API key · stored in the login keyring`。经 stdin 传给配置器 (不出现在 `ps` 里),
   存进 **登录密钥环** (`secret-tool`), 不落明文文件; 只有没装 libsecret 时才回退
   到配置文件, 那时占位文案和红色提示都会说明。
-- 全部文案跟随系统 locale (zh → 中文, 其它 → English), 可用 `language` 强制。
+- 全部文案跟随系统 locale (zh → 中文, ja → 日本語, es → Español, 其它 → English),
+  可用 `language` 强制。
   面板里回显的保存/错误信息来自 `voice_tui.py`, 插件会带 `--lang` 让它们与面板
   同一语言; 模型列表取不到时每个 provider 每次会话只试一次 (↻ 可重试), 不会每次
   打开面板都重复报错。
@@ -50,7 +51,7 @@ bash omarchy/install.sh
 
 | 键 | 说明 |
 |---|---|
-| `language` | `auto`(默认, 跟 locale) / `en` / `zh` |
+| `language` | `auto`(默认, 跟 locale) / `en` / `es` / `ja` / `zh` |
 | `repoPath` | 转发器仓库路径。留空用 `~/Apps/folo-ai-passport-voice` |
 
 ```bash
