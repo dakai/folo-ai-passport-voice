@@ -153,6 +153,26 @@ class StatusTest(unittest.TestCase):
     def test_missing_file_reads_as_empty(self):
         self.assertEqual(voice_config.read_status(), {})
 
+    def test_status_file_and_directory_are_private_under_a_permissive_umask(self):
+        # Regression: the last transcript landed in a world-readable file when
+        # the service ran with umask 022. Migration matters too — an older
+        # install already left such a file behind.
+        path = voice_config.status_path()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump({"lastText": "旧"}, handle)
+        os.chmod(path, 0o644)
+        os.chmod(os.path.dirname(path), 0o755)
+        saved = os.umask(0o022)
+        try:
+            voice_config.write_status(lastText="新的")
+        finally:
+            os.umask(saved)
+        self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o600)
+        self.assertEqual(
+            stat.S_IMODE(os.stat(os.path.dirname(path)).st_mode), 0o700)
+        self.assertEqual(voice_config.read_status()["lastText"], "新的")
+
 
 class LanguageTest(unittest.TestCase):
     """Three UI languages, three complete tables."""

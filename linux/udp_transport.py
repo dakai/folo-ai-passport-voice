@@ -37,6 +37,9 @@ RECV_TIMEOUT = 0.5
 RECV_MAX = 4096
 SWEEP_INTERVAL = 3.0
 SWEEP_MAX_HOSTS = 512
+# A rejected peer is logged this often at most: a hostile host that keeps
+# sending must not turn into a log flood.
+REJECT_LOG_INTERVAL = 10.0
 
 
 class UdpError(Exception):
@@ -159,6 +162,8 @@ class UdpTransport:
         self._pending = []
         self._device = None
         self._device_last = 0.0
+        # ip -> last time the rejection was logged
+        self._rejected = {}
 
     async def scan_for_device(self, name, timeout):
         """UDP server: return a placeholder, connect() waits for the device."""
@@ -348,21 +353,57 @@ class UdpTransport:
         if ftype == T_BEACON:
             return
         if ftype == T_PING:
-            self._note_device(addr)
+            if self._authorized(addr):
+                self._note_device(addr)
             return
         if ftype not in (T_AUDIO, T_EVENT):
             print(f"[udp] 未知报文类型 0x{ftype:02x} 来自 {addr[0]}, 忽略",
                   file=sys.stderr)
             return
+        # Authorization happens before any frame reaches the forwarder: an
+        # Enter packet from an arbitrary host must never be dispatched.
+        if not self._authorized(addr):
+            return
         self._note_device(addr)
         payload = bytes(data[1:])
         self._loop.call_soon_threadsafe(self._route_frame, ftype, payload)
+
+    def _authorized(self, addr):
+        """True when `addr` may be (or stay) the device peer.
+
+        The device protocol carries no credentials, so the peer is authorized
+        by configuration or by first contact and then locked:
+
+        * `device_ip` set: only that host is ever accepted, from the first
+          packet on. This is the deployment the README recommends.
+        * `device_ip` empty: the first host that sends an event or audio packet
+          is adopted and locked. The same IP may come back on a new port (the
+          device re-opens its socket), a different host may not — a second
+          network peer cannot take over a link that is already up.
+        """
+        if self._device_ip and addr[0] != self._device_ip:
+            self._reject(addr, f"不是配置的 device_ip {self._device_ip}")
+            return False
+        if self._device is not None and addr[0] != self._device[0]:
+            self._reject(addr, f"已锁定设备 {self._device[0]}")
+            return False
+        return True
+
+    def _reject(self, addr, reason):
+        now = time.monotonic()
+        if now - self._rejected.get(addr[0], 0.0) < REJECT_LOG_INTERVAL:
+            return
+        self._rejected[addr[0]] = now
+        print(f"[udp] 拒绝 {addr[0]}:{addr[1]} 的报文: {reason}"
+              "(协议无认证，只接受已选定的设备)", file=sys.stderr)
 
     def _note_device(self, addr):
         self._device_last = time.monotonic()
         if self._device != addr:
             if self._device is not None:
-                print(f"[udp] 设备地址变化 {self._device} → {addr}",
+                # Same host, new port: the device re-opened its socket after a
+                # reboot. A different host never gets here (see _authorized).
+                print(f"[udp] 设备端口变化 {self._device} → {addr}",
                       file=sys.stderr)
             self._device = addr
 

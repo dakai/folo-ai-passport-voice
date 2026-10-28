@@ -109,6 +109,19 @@ systemctl --user disable --now ai-passport-voice.service
 rm ~/.config/systemd/user/ai-passport-voice.service
 ```
 
+**Security model** — the device protocol has no credentials, so the forwarder cannot prove a packet came from your device. What it does:
+
+- **One peer only.** The first host that sends an event or audio packet is adopted and locked; a different host cannot take over a link that is up, and its packets (including the Enter key) are dropped and logged. The same host may come back on a new port after a reboot.
+- **Pin the device.** Set `device_ip` in `linux/voice-config.json` (or `--device-ip`) and only that address is ever accepted — from the first packet on. `bind_host` (or `--bind`) restricts the socket to one interface. Together with a firewall rule this closes the port to everything but your device:
+
+  ```bash
+  sudo nft add rule inet filter input udp dport 33333 ip saddr != <device-ip> drop
+  ```
+- **Local privacy.** The last transcript is written to `~/.local/state/ai-passport-voice/status.json` with the directory at 0700 and the file at 0600; an older world-readable file is tightened on the next write. The service unit sets `UMask=0077` as well.
+- **No transcript in `ps`.** Text is passed to `wtype` over stdin (`wtype -`), never as an argument, so other local users cannot read it from the process list.
+
+Without `device_ip` the lock is only as good as the first packet after start: a hostile host on the same network that answers before your device can claim the link until the service restarts.
+
 **Running it by hand (debugging)**
 
 Service and manual run are mutually exclusive — both bind UDP 33333. Stop the service first:
@@ -130,6 +143,7 @@ python3 linux/voice_forwarder.py --no-asr                  # receive audio, skip
 {
   "udp_port": 33333,
   "device_ip": "",
+  "bind_host": "0.0.0.0",
   "voxtype_bin": "voxtype",
   "engine": "sensevoice",
   "llm": {"enabled": false, "provider": "off", "base_url": "", "model": "",
@@ -137,9 +151,9 @@ python3 linux/voice_forwarder.py --no-asr                  # receive audio, skip
 }
 ```
 
-Leave `device_ip` empty: discovery is enough unless the router isolates clients. The whole `llm` block may be omitted (that means off), an empty `api_key` is the normal state (the key lives in the keyring), and an empty `prompt` uses the built-in one — a custom prompt marks the transcript position with `%s`. The forwarder re-reads the file on every utterance, so **a config change needs no restart**.
+`device_ip` is also the access-control setting: fill it in and only that host may talk to the forwarder (see **Security model**). Empty means auto-discovery, which is enough on a normal LAN but always accepts the first peer after start. `bind_host` defaults to every interface. The whole `llm` block may be omitted (that means off), an empty `api_key` is the normal state (the key lives in the keyring), and an empty `prompt` uses the built-in one — a custom prompt marks the transcript position with `%s`. The forwarder re-reads the file on every utterance, so **a config change needs no restart**.
 
-The forwarder also writes `~/.local/state/ai-passport-voice/status.json`: `link` (`linked` / `waiting`), the last typed text, the last error. The widget reads that file instead of parsing the journal; delete it and it is recreated.
+The forwarder also writes `~/.local/state/ai-passport-voice/status.json`: `link` (`linked` / `waiting`), the last typed text, the last error. It is created 0600 inside a 0700 directory, because that text is private. The widget reads that file instead of parsing the journal; delete it and it is recreated.
 
 **Troubleshooting (Linux)**
 

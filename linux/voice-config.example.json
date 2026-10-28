@@ -1,6 +1,7 @@
 {
   "udp_port": 33333,
   "device_ip": "",
+  "bind_host": "0.0.0.0",
   "voxtype_bin": "voxtype",
   "engine": "sensevoice",
   "llm": {

@@ -122,6 +122,26 @@ systemctl --user disable --now ai-passport-voice.service
 rm ~/.config/systemd/user/ai-passport-voice.service
 ```
 
+**安全模型** —— 设备协议没有凭证, 转发器无法证明报文真来自你的设备。它做的是:
+
+- **只认一个对端。** 第一个发来事件/音频报文的主机被选定并锁定; 链路活着时别的主机
+  接管不了, 它的报文(包括回车键)直接丢弃并记日志。同一主机重启后换端口仍然认。
+- **固定设备。** 在 `linux/voice-config.json` 写 `device_ip`(或 `--device-ip`), 从那之后
+  只接受这个地址; `bind_host`(或 `--bind`)可以只在一个网卡上监听。再加一条防火墙规则,
+  端口就只对你的设备开放:
+
+  ```bash
+  sudo nft add rule inet filter input udp dport 33333 ip saddr != <设备IP> drop
+  ```
+- **本机隐私。** 最近一条上屏文字写入 `~/.local/state/ai-passport-voice/status.json`,
+  目录 0700、文件 0600; 旧版本留下的可读文件会在下次写入时收紧。服务单元另外设了
+  `UMask=0077`。
+- **`ps` 里看不到内容。** 文字经 stdin (`wtype -`) 传给 wtype, 不作为参数, 所以别的
+  本机用户无法从进程列表读到。
+
+不填 `device_ip` 时, 锁定只对「启动后第一个应答」有效: 同网段的恶意主机若抢在你的设备
+之前应答, 就能占据这条链路, 直到服务重启。
+
 **手动运行(调试)**
 
 服务与手动运行**只能二选一**, 都会绑 UDP 33333。手动前先停服务:
@@ -144,6 +164,7 @@ python3 linux/voice_forwarder.py --no-asr                  # 只收音频不识�
 {
   "udp_port": 33333,
   "device_ip": "",
+  "bind_host": "0.0.0.0",
   "voxtype_bin": "voxtype",
   "engine": "sensevoice",
   "llm": {"enabled": false, "provider": "off", "base_url": "", "model": "",
@@ -151,14 +172,15 @@ python3 linux/voice_forwarder.py --no-asr                  # 只收音频不识�
 }
 ```
 
-`device_ip` 留空即可: 只有路由器的客户端隔离挡住广播时才需要填。`llm` 整段可以省略
-(缺省即关闭); `api_key` 留空是正常状态(key 在密钥环里); `prompt` 留空用内置提示词,
-自定义时用 `%s` 标记转写文本该插入的位置。转发器每次说话都重新读这个文件,
-**改配置不需要重启服务**。
+`device_ip` 同时是访问控制项: 填上它, 就只有这台主机能和转发器通信(见上面的
+**安全模型**)。留空即自动探测 —— 正常局域网够用, 但启动后第一个应答的主机会被接受。
+`bind_host` 默认在所有网卡上监听。`llm` 整段可以省略 (缺省即关闭); `api_key` 留空是
+正常状态 (key 在密钥环里); `prompt` 留空用内置提示词, 自定义时用 `%s` 标记转写文本
+该插入的位置。转发器每次说话都重新读这个文件, **改配置不需要重启服务**。
 
-转发器还会写 `~/.local/state/ai-passport-voice/status.json`: `link`
-(`linked` / `waiting`)、最近上屏文字、最后一次错误。栏插件读它而不是解析 journal;
-删掉会自行重建。
+转发器还会写 `~/.local/state/ai-passport-voice/status.json`: `link`(`linked` /
+`waiting`)、最后上屏的文字、最后一次错误。它的权限是目录 0700、文件 0600 ——
+那段文字是私密的。栏插件读这个文件而不是解析 journal; 删掉会自动重建。
 
 **排错(Linux)**
 

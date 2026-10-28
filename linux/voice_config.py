@@ -39,6 +39,7 @@ KEYRING_TIMEOUT = 5.0
 DEFAULTS = {
     "udp_port": 33333,
     "device_ip": "",
+    "bind_host": "0.0.0.0",
     "voxtype_bin": "voxtype",
     "engine": "sensevoice",
     "llm": {
@@ -295,17 +296,37 @@ def status_path():
     return os.environ.get("AIPV_STATUS_PATH") or STATUS_PATH
 
 
+def _private_dir(path):
+    """Create/repair the state directory so only this user can enter it."""
+    directory = os.path.dirname(path) or "."
+    os.makedirs(directory, mode=0o700, exist_ok=True)
+    try:
+        # An older install may have left it world-readable: tighten on write.
+        if os.stat(directory).st_mode & 0o077:
+            os.chmod(directory, 0o700)
+    except OSError:
+        pass
+
+
 def write_status(**fields):
-    """Merge fields into status.json; never raise on the forwarder's hot path."""
+    """Merge fields into status.json; never raise on the forwarder's hot path.
+
+    The file carries the last transcript, so it is private by construction: the
+    directory is 0700, the temp file is created 0600 (an inherited umask cannot
+    widen it), and the atomic rename keeps that mode — which also migrates a
+    world-readable file left by an older version.
+    """
     path = status_path()
     current = read_status(path)
     current.update(fields)
     current["updated"] = round(time.time(), 3)
     try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        _private_dir(path)
         temp = path + ".tmp"
-        with open(temp, "w", encoding="utf-8") as handle:
-            json.dump(current, handle, ensure_ascii=False)
+        handle = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(handle, "w", encoding="utf-8") as out:
+            json.dump(current, out, ensure_ascii=False)
+        os.chmod(temp, 0o600)
         os.replace(temp, path)
     except OSError:
         pass

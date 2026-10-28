@@ -12,13 +12,14 @@ class InjectError(Exception):
     """wtype missing or injection failed."""
 
 
-def _run(cmd, dry_run=False):
+def _run(cmd, dry_run=False, stdin_text=None):
     if dry_run:
         return cmd
     if shutil.which(cmd[0]) is None:
         raise InjectError(f"找不到 {cmd[0]}。{GUIDE}")
     try:
-        subprocess.run(cmd, check=True, capture_output=True, timeout=10)
+        subprocess.run(cmd, check=True, capture_output=True, timeout=10,
+                       input=(stdin_text or "").encode("utf-8"))
     except subprocess.CalledProcessError as e:
         raise InjectError(f"注入失败: {e}") from e
     return cmd
@@ -28,8 +29,10 @@ def type_text(text, dry_run=False):
     """Type text at the focused input. Empty text is a no-op."""
     if not text:
         return []
-    # `--` keeps leading dashes/unicode out of option parsing.
-    return _run(["wtype", "--", text], dry_run=dry_run)
+    # `wtype -` reads the text from stdin: argv is world-readable through
+    # /proc while wtype runs, and a transcript is private. It also keeps
+    # leading dashes and unicode out of option parsing.
+    return _run(["wtype", "-"], dry_run=dry_run, stdin_text=text)
 
 
 def key_action(action, dry_run=False):

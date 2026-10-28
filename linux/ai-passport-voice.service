@@ -6,6 +6,9 @@ PartOf=graphical-session.target
 
 [Service]
 Type=simple
+# Nothing this process creates may be readable by other local users: the state
+# file holds the last transcript. Files that need 0600 set their own mode too.
+UMask=0077
 # Installed by linux/install.sh: points at the repo checkout. wtype needs
 # the Wayland socket, so this binds to the graphical session, not boot.
 # -u: journal  collected via pipe, not a TTY. Without it print() block-

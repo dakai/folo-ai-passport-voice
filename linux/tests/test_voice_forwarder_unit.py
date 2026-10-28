@@ -230,15 +230,84 @@ class AsrVoxtypeTest(unittest.TestCase):
 
 class InjectTest(unittest.TestCase):
     def test_dry_run_spawns_no_subprocess(self):
-        self.assertEqual(inject.type_text("你好", dry_run=True),
-                         ["wtype", "--", "你好"])
+        self.assertEqual(inject.type_text("你好", dry_run=True), ["wtype", "-"])
         self.assertEqual(inject.key_action("enter", dry_run=True),
                          ["wtype", "-k", "Return"])
         self.assertEqual(inject.type_text("", dry_run=True), [])
 
+    def test_transcript_never_reaches_the_process_arguments(self):
+        # Regression: `wtype -- <text>` put the whole transcript in argv, where
+        # any local user can read it from /proc while it is being typed.
+        d = tempfile.mkdtemp()
+        argv_path = os.path.join(d, "argv")
+        stdin_path = os.path.join(d, "stdin")
+        fake = os.path.join(d, "wtype")
+        with open(fake, "w", encoding="utf-8") as f:
+            f.write(f"#!{sys.executable}\n"
+                    "import sys\n"
+                    f"open({argv_path!r}, 'w').write('\\n'.join(sys.argv[1:]))\n"
+                    f"open({stdin_path!r}, 'w').write(sys.stdin.read())\n")
+        os.chmod(fake, os.stat(fake).st_mode | stat.S_IXUSR)
+        secret = "dummy-transcript-8f3a"
+        saved = os.environ["PATH"]
+        os.environ["PATH"] = d + os.pathsep + saved
+        try:
+            inject.type_text(secret)
+        finally:
+            os.environ["PATH"] = saved
+        with open(argv_path, encoding="utf-8") as f:
+            self.assertNotIn(secret, f.read())
+        with open(stdin_path, encoding="utf-8") as f:
+            self.assertEqual(f.read(), secret)
+
     def test_unknown_action_rejected(self):
         with self.assertRaises(ValueError):
             inject.key_action("space", dry_run=True)
+
+
+class _FakeLoop:
+    def __init__(self):
+        self.calls = []
+
+    def call_soon_threadsafe(self, fn, *args):
+        self.calls.append((fn, args))
+
+
+class PeerAuthorizationTest(unittest.TestCase):
+    """A second network peer must never drive input or replace the device."""
+
+    ENTER = (bytes((u.T_EVENT,))
+             + b'{"event":"key.action","action":"enter"}\n')
+
+    def transport(self, device_ip=None):
+        t = u.UdpTransport(port=33333, device_ip=device_ip)
+        t._loop = _FakeLoop()
+        return t
+
+    def test_a_second_peer_cannot_take_over_a_connected_device(self):
+        t = self.transport()
+        t._on_datagram(None, self.ENTER, ("192.168.1.50", 40000))
+        self.assertEqual(t._device, ("192.168.1.50", 40000))
+        self.assertEqual(len(t._loop.calls), 1)
+        t._on_datagram(None, self.ENTER, ("192.168.1.66", 40000))
+        self.assertEqual(t._device, ("192.168.1.50", 40000))
+        self.assertEqual(len(t._loop.calls), 1)   # nothing dispatched
+
+    def test_a_pinned_device_ip_rejects_everything_else(self):
+        t = self.transport(device_ip="192.168.1.50")
+        t._on_datagram(None, self.ENTER, ("192.168.1.66", 40000))
+        self.assertIsNone(t._device)
+        self.assertEqual(t._loop.calls, [])
+        t._on_datagram(None, self.ENTER, ("192.168.1.50", 40000))
+        self.assertEqual(t._device, ("192.168.1.50", 40000))
+        self.assertEqual(len(t._loop.calls), 1)
+
+    def test_the_same_host_may_return_on_a_new_port(self):
+        t = self.transport()
+        t._on_datagram(None, self.ENTER, ("192.168.1.50", 40000))
+        t._on_datagram(None, self.ENTER, ("192.168.1.50", 40001))
+        self.assertEqual(t._device, ("192.168.1.50", 40001))
+        self.assertEqual(len(t._loop.calls), 2)
 
     def test_beacon_broadcast_addrs(self):
         addrs = [a for a, _ in u._local_broadcast_addrs(33333)]

@@ -144,8 +144,8 @@ CI in `.github/workflows/checks.yml` runs three jobs. The `windows` job installs
 - `windows/diagnose_voice.py`: read-only bridge diagnostics.
 - `linux/voice_forwarder.py`: Linux entry point, `Forwarder`, voxtype ASR thread, wtype injection.
 - `linux/asr_voxtype.py`: `voxtype transcribe` wrapper, WAV writer, first-blank-line parser.
-- `linux/inject.py`: wtype text and enter/clear injection with dry-run support.
-- `linux/udp_transport.py`: Linux side of the UDP wire spec, `ip addr` broadcast enumeration.
+- `linux/inject.py`: wtype text injection — the transcript goes over stdin, never argv — plus enter/clear, with dry-run support.
+- `linux/udp_transport.py`: Linux side of the UDP wire spec, `ip addr` broadcast enumeration, and peer authorization: `device_ip` pins the host, otherwise the first event/audio sender is adopted and locked (same IP, new port allowed).
 - `device/main/apps/voice/app_voice.cc`: device entry point, lifecycle, `g_voice_app`, worker task.
 - `device/main/apps/voice/app_state.c`: pure reducer under host test.
 - `device/main/apps/voice/app_types.h`: shared enums, structs, timeout constants.

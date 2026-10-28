@@ -193,6 +193,7 @@ class Forwarder:
         voice_config.write_status(link="waiting", lastError="")
         while True:
             transport = UdpTransport(port=self.args.port,
+                                     bind_host=getattr(self.args, "bind", "0.0.0.0"),
                                      device_wait_timeout=10 ** 9,
                                      device_ip=self.args.device_ip,
                                      auto_recover=False)
@@ -274,9 +275,12 @@ def main(argv=None):
                     "配置见 voice-config.json, 命令行参数优先)")
     ap.add_argument("--port", type=int,
                     default=int(cfg["udp_port"]) if str(cfg.get("udp_port") or "").strip().isdigit() else 33333)
-    ap.add_argument("--device-ip",
-                    default=str(cfg.get("device_ip") or ""),
-                    help="设备目标IP(路由器AP隔离阻断广播时填,留空则自动探测)")
+    ap.add_argument("--device-ip", default=str(cfg.get("device_ip") or ""),
+                    help="设备IP: 只接受这个地址的报文(最强限制);"
+                         "留空则自动探测, 首个上报的对端会被锁定")
+    ap.add_argument("--bind",
+                    default=str(cfg.get("bind_host") or "0.0.0.0"),
+                    help="监听地址: 填本机某个局域网 IP 可只在该网卡上收设备报文")
     ap.add_argument("--voxtype-bin",
                     default=str(cfg.get("voxtype_bin") or "voxtype"),
                     help="voxtype 可执行文件路径")
@@ -311,6 +315,10 @@ def main(argv=None):
     print("=" * 66)
     print(f"引擎: {args.engine}  wtype: "
           f"{'就绪' if inject.inject_available() else '未找到(先装 wtype)'}")
+    if not args.device_ip:
+        print("[security] 未固定 device_ip: 设备协议没有认证, 首个上报的对端会被"
+              "锁定。建议在 voice-config.json 写 device_ip, 并用防火墙只放行该"
+              "地址到 UDP 端口。", file=sys.stderr)
     try:
         asyncio.run(fwd.run())
     except KeyboardInterrupt:

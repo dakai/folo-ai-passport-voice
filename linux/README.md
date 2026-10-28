@@ -13,10 +13,10 @@
 | 文件 | 职责 |
 |---|---|
 | `voice_forwarder.py` | 入口: UDP 收发、utterance 生命周期、调用识别与键入 |
-| `udp_transport.py` | UDP 报文格式、设备发现(广播 beacon + 单播探测) |
+| `udp_transport.py` | UDP 报文格式、设备发现(广播 beacon + 单播探测)、对端授权(锁定 `device_ip` 或首个对端) |
 | `adpcm.py` | IMA ADPCM 解码, 与设备端 `device/main/apps/voice/adpcm.c` 逐字节一致 |
 | `asr_voxtype.py` | `voxtype transcribe` 包装: 写 WAV、解析首个空行之后的文本 |
-| `inject.py` | `wtype` 键入文字、回车、清行; `--dry-run` 不启动子进程 |
+| `inject.py` | `wtype` 键入文字(经 stdin, 不上命令行)、回车、清行; `--dry-run` 不启动子进程 |
 | `llm_cleanup.py` | OpenAI 兼容整理: provider 目录、`PROMPT`、失败回退、3 语言消息 |
 | `voice_config.py` | `voice-config.json`、`status.json`、API key、`resolve_lang` 的唯一读写与判定处 |
 | `voice_tui.py` | 终端配置器; 同时是栏插件调用的 `status` / `set` / `models` / `test` 后端 |
