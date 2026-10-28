@@ -2,6 +2,10 @@
 
 ## 未发布
 
+- Omarchy 栏插件提交到社区市场 (omacom/omarchy-plugin-marketplace#13150): 市场只认
+  「仓库根目录即插件」, 所以另建只读镜像 `dakai/omarchy-ai-passport-voice`, 由
+  `git subtree push --prefix omarchy` 同步, 本仓库仍是唯一来源。镜像只含插件本体 ——
+  面板要读 `linux/voice_tui.py`, 转发器仍要装本仓库; 卸载不动配置、密钥环和服务。
 - Linux 转发器新增可选 **LLM 整理**: 识别原文先去掉口头语/口吃并补标点再键入,
   默认关闭; 失败一律回退原文, 转写内容按数据处理(不回答、不执行)。
 - 新增 `linux/voice_tui.py` 终端配置器: 选 provider/模型/key、开关整理、试跑一句;
