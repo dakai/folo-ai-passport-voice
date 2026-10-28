@@ -70,6 +70,7 @@
     "linux/voice_tui.py",
     "omarchy/BarWidget.qml",
     "omarchy/I18n.js",
+    "omarchy/LICENSE",
     "omarchy/Panel.qml",
     "omarchy/README.md",
     "omarchy/bin/aipv",
