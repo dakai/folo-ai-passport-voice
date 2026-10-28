@@ -1,102 +1,85 @@
-# AI Passport 语音 · Omarchy 栏插件
+# AI Passport Voice · Omarchy bar widget
 
-<img src="https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/docs/images/omarchy-panel.webp" alt="面板: 服务状态、最近一条上屏文字与 LLM 整理设置" width="360">
+<img src="https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/docs/images/ai-passport.webp" alt="The AI Passport wearable" width="330"> <img src="https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/docs/images/omarchy-panel.webp" alt="The panel: service state, last recognised text, and the LLM cleanup settings" width="330">
 
-栏上只有一个图标, 不带文字。三种状态用「图标 + 颜色」两个维度区分:
+**English** · [中文](README.zh-CN.md)
 
-| 状态 | 图标 | 颜色 |
-|---|---|---|
-| 服务未运行 | 电源 `⏻` | 45% 淡化 |
-| 服务在跑、等设备 | 麦克风 | 灰度 (前景色 55%) |
-| 设备已连接 | 麦克风 | 主题绿色 |
+The bar icon and panel for the **AI Passport** wireless microphone on Linux. Hold the top button on the device, speak, release: the recognised text is typed into the window you are in. This widget shows whether that chain is alive and configures the optional LLM cleanup that tidies the transcript before it is typed.
 
-绿色取自当前主题 `colors.toml` 的 `green` (`Commons.Color` 只暴露
-foreground/accent/urgent/muted, 所以插件自己读这一个值; 读不到回退 `#9ece6a`)。
-带斜杠的麦克风 `` 故意不用: 它读作「已静音」, 而这里并没有静音状态 —
-「服务没跑」用电源符号表达不会有歧义; 若以后真加静音, 斜杠麦克风留给它。
+## Where this sits
 
-悬停有 tooltip。点开是面板:
+| Piece | Location |
+| --- | --- |
+| Device hardware and firmware | **FoloToy AI Passport** — ESP32-C3 · 8 MB flash · no PSRAM · 240 × 320 ST7789P3 display · ES8311 codec · three physical buttons. Sources and board documentation: [FoloToy/ai-passport](https://github.com/FoloToy/ai-passport) |
+| The voice feature inside the firmware | Ships inside the device firmware builds published on the [FoloToy play page](https://ai-passport.folotoy.cn/plays/438/); validated on integrated firmware `0.2.0-rc.6`. This project ships no flashable firmware |
+| Computer side: Linux forwarder, `voice_tui.py`, Windows companion | [dakai/folo-ai-passport-voice](https://github.com/dakai/folo-ai-passport-voice) |
+| This widget | Mirrored from `omarchy/` in the repository above — edit there, not here |
 
-- **服务状态**: 是否运行、设备是否已连 (读 `status.json`, 不解析 journal)、
-  最近一条上屏文字、最近一次错误。
-- **服务没跑时** 面板直接写出两条修复命令 (`systemctl --user start …` /
-  `bash linux/install.sh`), 右上角按钮从「重启」变成「启动」。
-- **服务在跑但没设备** 时提示在设备上打开「AI 语音」并按住上键说话。
-- **LLM 整理开关 / provider / 模型**: provider 用普通下拉; 模型用**可搜索下拉**
-  (OpenRouter 有 300 个模型, 直接输入片段过滤)。打开面板时自动按当前 provider
-  取一次 `GET /models` 并缓存, 换 provider 会重取, ↻ 可手动刷新;
-  自定义 provider 会多出 base_url 输入框。
-- **API key**: 密码框, 占位文案直接写明存哪 —
-  `API key · stored in the login keyring`。经 stdin 传给配置器 (不出现在 `ps` 里),
-  存进 **登录密钥环** (`secret-tool`), 不落明文文件; 只有没装 libsecret 时才回退
-  到配置文件, 那时占位文案和红色提示都会说明。
-- 全部文案跟随系统 locale (zh → 中文, ja → 日本語, 其它 → English),
-  可用 `language` 强制。
-  面板里回显的保存/错误信息来自 `voice_tui.py`, 插件会带 `--lang` 让它们与面板
-  同一语言; 模型列表取不到时每个 provider 每次会话只试一次 (↻ 可重试), 不会每次
-  打开面板都重复报错。
+Nothing in this repository flashes the device, changes its Wi-Fi settings, or talks to it directly. The widget only reads what the forwarder reports and rewrites the forwarder's own config.
 
-插件自身不存设置 (除 `language` / `repoPath`), 所有读写都调用仓库里的
-`linux/voice_tui.py` — 与终端菜单是同一个程序, 所以两边永远一致。
+## What the widget does
 
-## 安装
+One icon, no text:
 
-插件市场里一条命令 (推荐):
+| State | Icon | Colour |
+| --- | --- | --- |
+| Service not running | power `⏻` | 45 % opacity |
+| Running, waiting for the device | microphone | grey (55 % of the bar foreground) |
+| Device connected | microphone | theme green (`green` from `colors.toml`, `#9ece6a` if absent) |
+
+A slashed microphone is deliberately unused — it reads as "muted", and there is no muted state here.
+
+Click for the panel:
+
+- **Service state**: running or not, whether the device is linked, the last recognised text, the last error — read from `status.json`, no journal parsing.
+- **Service down**: the two commands that fix it, and the top-right button becomes Start instead of Restart.
+- **Running, waiting for the device**: a reminder to open “AI 语音” on the device and hold the top button.
+- **LLM cleanup switch, provider, model**: provider is a plain dropdown; the model list is a searchable picker fed by the endpoint's `GET /models` (OpenRouter serves ~300). Fetched on open, refetched when the provider or base URL changes, `↻` refreshes by hand.
+- **Custom provider**: an OpenAI-compatible base URL field appears.
+- **API key**: a masked field whose placeholder says where the key will go — the login keyring (`secret-tool`), never a plain file. It is passed to the configurator over stdin, so it never shows up in `ps`.
+
+Panel text follows the desktop locale (`zh` → Chinese, `ja` → Japanese, otherwise English) and can be forced with the `language` setting. Lines the panel echoes back come from `voice_tui.py`, which the widget runs with the panel's language, so the two never mix.
+
+## Requirements
+
+- Linux with a wlroots compositor (Omarchy assumed; `wtype` cannot type into GNOME or KDE Wayland).
+- The forwarder checkout from [dakai/folo-ai-passport-voice](https://github.com/dakai/folo-ai-passport-voice) with its systemd user unit, because the panel runs `<repoPath>/linux/voice_tui.py` for every read and write. The default is `~/Apps/folo-ai-passport-voice`; set `repoPath` when yours lives elsewhere.
+
+## Install
 
 ```bash
 omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable
-omarchy plugin remove manchunx7.ai-passport-voice     # 卸载
+omarchy plugin remove manchunx7.ai-passport-voice     # uninstall
 ```
 
-镜像只带插件本体, **不带转发器**: 面板要读 `linux/voice_tui.py`, 所以仍需先装本仓库
-(根 README 的 Linux 一节), 并让 `repoPath` 指向那份 checkout。缺了它面板会提示
-「未找到转发器仓库」。卸载插件不动 `voice-config.json`、密钥环和转发器服务。
+The plugin repository holds the widget only. The forwarder is installed separately from the app repository (see its Linux section) — without it the panel says it cannot find the checkout.
 
-### 从应用仓库装
+From an app-repository clone, `bash tools/install-omarchy-plugin.sh` copies `omarchy/` into `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, validates it, rescans the shell and puts it in the right bar section. Re-running updates in place and keeps the placement.
 
-插件本体在 `omarchy/`, 安装脚本在 `tools/` (脚本不随插件发布: 市场用
-`omarchy plugin add`, 插件仓库不该带能改环境的安装器)。克隆本仓库后:
+If the icon does not appear, `omarchy restart shell` — hot reload does not rebuild the bar.
 
-```bash
-bash tools/install-omarchy-plugin.sh
-```
+## Settings
 
-脚本只做本地动作: 把 `omarchy/` 覆盖到
-`~/.config/omarchy/plugins/manchunx7.ai-passport-voice/` → 校验 → 让 shell 重新扫描
-→ 未启用时 `omarchy plugin enable … --section right`。重复运行等于更新,
-不会改变栏上位置。仓库不在默认路径时它会顺手把 `repoPath` 写进插件设置,
-插件才知道 `linux/voice_tui.py` 在哪。
-
-为什么不能 `omarchy plugin add <本仓库>`: 那个命令把**仓库根目录**当插件校验,
-而这里的根是整个项目、插件在 `omarchy/` 子目录 —— 市场用上面那个镜像仓库。
-
-栏上没出现就 `omarchy restart shell`(热重载不会重建已有的栏组件)。
-
-### 镜像
-
-[dakai/omarchy-ai-passport-voice](https://github.com/dakai/omarchy-ai-passport-voice)
-是 `omarchy/` 这一份的**只读镜像** —— 别在那里改代码, 改动一律落在本仓库, 再推上去:
-
-```bash
-git subtree push --prefix omarchy https://github.com/dakai/omarchy-ai-passport-voice.git main
-```
-
-## 设置
-
-| 键 | 说明 |
-|---|---|
-| `language` | `auto`(默认, 跟 locale) / `en` / `ja` / `zh` |
-| `repoPath` | 转发器仓库路径。留空用 `~/Apps/folo-ai-passport-voice` |
+| Key | Meaning |
+| --- | --- |
+| `language` | `auto` (default, follows the locale) / `en` / `ja` / `zh` |
+| `repoPath` | Forwarder checkout holding `linux/voice_tui.py`. Empty means `~/Apps/folo-ai-passport-voice` |
 
 ```bash
 omarchy bar set manchunx7.ai-passport-voice language zh
 omarchy bar set manchunx7.ai-passport-voice repoPath /path/to/checkout --json
 ```
 
-## 自检
+The widget keeps no state of its own: every read and write goes through `linux/voice_tui.py`, the same program as the terminal menu, so the two can never disagree. Uninstalling it leaves `voice-config.json`, the keyring entry and the forwarder service untouched.
+
+## Self-check
 
 ```bash
-omarchy-shell manchunx7.ai-passport-voice probe   # 打印 status JSON
+omarchy-shell manchunx7.ai-passport-voice probe   # prints the status JSON
 ```
 
-`Target not found` 表示 QML 没加载, 看 shell 日志里的 QML 错误, 不是插件逻辑问题。
+`Target not found` means the QML did not load — read the shell log for the QML error; it is not a plugin logic problem.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

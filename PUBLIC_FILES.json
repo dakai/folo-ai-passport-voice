@@ -73,6 +73,7 @@
     "omarchy/LICENSE",
     "omarchy/Panel.qml",
     "omarchy/README.md",
+    "omarchy/README.zh-CN.md",
     "omarchy/bin/aipv",
     "omarchy/manifest.json",
     "tools/check_scope.py",
