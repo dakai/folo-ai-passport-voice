@@ -2,7 +2,7 @@
 
 <img src="docs/images/ai-passport.webp" alt="AI Passport" width="330">
 
-**Languages:** English · [中文](README.zh-CN.md) · [Español](README.es.md) · [日本語](README.ja.md)
+**Languages:** English · [中文](README.zh-CN.md) · [日本語](README.ja.md)
 
 Hold the top button on your AI Passport, speak, release. The text appears in the window you are typing in; short-press the bottom button to send Enter.
 
@@ -17,6 +17,20 @@ The device does the listening, the computer does the recognition. Two ways to ru
 
 
 **This repository ships the voice feature, not the whole device.** There is no flashable firmware and no full ESP-IDF project here. The firmware is published by the maintainer on the [FoloToy play page](https://ai-passport.folotoy.cn/plays/438/); if that page does not yet have a build with 随身语音, wait for the update. Never treat this repository's *Source code ZIP* as firmware.
+
+## Languages
+
+Four different things get translated or recognised; they are not the same set.
+
+| | Languages |
+| --- | --- |
+| Documentation | English · 中文 · 日本語 |
+| Interface (bar panel and `voice_tui.py`) | English · 中文 · 日本語 · Español — `language` setting or `--lang`, follows the desktop locale; labels only |
+| Recognition out of the box (SenseVoice) | 中文 · English · 日本語 · 한국어 · 粤语 |
+| Recognition with another engine | whatever that engine's model covers — e.g. whisper multilingual (`base`, `small`, `large-v3`) plus `whisper.language es` for Spanish |
+| Transcript cleanup (LLM) | any language: it reformats what the recogniser produced, it never translates |
+
+**Only the Linux path has been tested.** The recognition results above were measured with voxtype on the Linux forwarder — Japanese end to end, Chinese and English in daily use, Spanish coming back as Korean because SenseVoice has no Spanish. The Windows forwarder does no recognition itself: your input method does, so which languages work there is that software's business and has not been tested here.
 
 ## What you need
 

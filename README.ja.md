@@ -2,7 +2,7 @@
 
 <img src="docs/images/ai-passport.webp" alt="AI Passport" width="330">
 
-**言語:** [English](README.md) · [中文](README.zh-CN.md) · [Español](README.es.md) · 日本語
+**言語:** [English](README.md) · [中文](README.zh-CN.md) · 日本語
 
 AI Passport の上ボタンを押したまま話し、離すと、入力中のウィンドウに文字が入ります。確認したら下ボタンを短く押すと Enter が送られます。
 
@@ -17,6 +17,23 @@ AI Passport の上ボタンを押したまま話し、離すと、入力中の�
 
 
 **このリポジトリが公開しているのは音声機能だけであり、端末本体のソースや書き込み可能なファームウェアは含みません。** ファームウェアはメンテナーが [FoloToy のプレイページ](https://ai-passport.folotoy.cn/plays/438/) で公開しています。そのページに 随身语音 を含む版がまだ無い場合は更新を待ってください。本リポジトリの *Source code ZIP* をファームウェアとして使わないでください。
+
+## 対応言語
+
+翻訳・認識されるものは 4 種類あり、同じ集合ではありません。
+
+| | 言語 |
+| --- | --- |
+| ドキュメント | English · 中文 · 日本語 |
+| インターフェース(バーパネルと `voice_tui.py`) | English · 中文 · 日本語 · Español — `language` 設定または `--lang`、デスクトップの locale に従う。文言のみ |
+| 標準エンジン(SenseVoice)での認識 | 中文 · English · 日本語 · 한국어 · 粤语 |
+| 別エンジンでの認識 | そのエンジンのモデル次第 — 例: whisper の多言語モデル(`base`、`small`、`large-v3`)と `whisper.language es` でスペイン語 |
+| LLM 整形 | 任意の言語: 認識結果を整えるだけで、翻訳はしません |
+
+**検証済みは Linux のみ。** 上表の認識結果はすべて Linux のフォワーダーと voxtype で
+実測したものです — 日本語は端到端で成功、中国語と英語は日常使用、スペイン語は
+SenseVoice に対応がないため韓国語として出力されました。Windows 側は認識自体を
+行わず入力方式が担当するため、どの言語が使えるかはそのソフト次第で、ここでは未検証です。
 
 ## 必要なもの
 

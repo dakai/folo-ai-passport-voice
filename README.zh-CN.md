@@ -2,7 +2,7 @@
 
 <img src="docs/images/ai-passport.webp" alt="AI Passport" width="330">
 
-**语言:** [English](README.md) · 中文 · [Español](README.es.md) · [日本語](README.ja.md)
+**语言:** [English](README.md) · 中文 · [日本語](README.ja.md)
 
 按住 AI Passport 上键说话，松开后文字出现在你正在输入的窗口里；核对后短按下键回车。
 
@@ -17,6 +17,22 @@
 
 
 **本仓库只开源随身语音功能, 不含整机源码或可刷写固件。** 固件由维护者在 [FoloToy 口袋百宝箱玩法页面](https://ai-passport.folotoy.cn/plays/438/) 发布; 该页面若暂未提供包含随身语音的版本, 请等待更新。不要把本仓库的 *Source code ZIP* 当固件。
+
+## 语言支持
+
+有四件不同的东西会被翻译或识别，它们不是同一个集合。
+
+| | 语言 |
+| --- | --- |
+| 文档 | English · 中文 · 日本語 |
+| 界面（栏面板与 `voice_tui.py`） | English · 中文 · 日本語 · Español —— `language` 设置或 `--lang`，跟随系统 locale；只有文案 |
+| 开箱识别（SenseVoice） | 中文 · English · 日本語 · 한국어 · 粤语 |
+| 换引擎后的识别 | 由那个引擎的模型决定 —— 例如 whisper 多语言模型（`base`、`small`、`large-v3`）加 `whisper.language es` 做西语 |
+| LLM 整理 | 任意语言：它只重排识别结果，从不翻译 |
+
+**仅在 Linux 上测过。** 上表的识别结论都是在 Linux 转发器上用 voxtype 实测的 ——
+日文端到端可用, 中英文日常在用, 西班牙语被 SenseVoice 识别成韩文。Windows 端
+本身不做识别, 识别由输入法完成, 所以那边支持哪些语言取决于那个软件, 这里没有测过。
 
 ## 需要什么
 
