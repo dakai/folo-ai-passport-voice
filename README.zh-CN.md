@@ -292,8 +292,11 @@ provider: `ollama` / `lmstudio` / `llamacpp`(本机, 免 key)、`openai` / `open
 
 ```text
 先阅读 README.md 和 docs/QUICKSTART.zh-CN.md。只帮助我配置随身语音电脑端，不要重建或公开整机源码。固件从官网玩法页获取，不要把 Source code ZIP 当固件。
-先运行 windows/AI-Passport-Voice.exe --diagnose，核对 VB-CABLE 两端、UDP 33333 和快捷键。已有配置先备份；我的输入法开始/结束快捷键和 hold/tap 模式需要按真实设置核对。
-修改默认麦克风、安装驱动或开放防火墙前说明影响。不要关闭整套防火墙，也不要把系统声音输出改成 CABLE Input。
+先判断我在哪个系统，再按 README 里对应那一节做：
+- Windows: 先运行 windows/AI-Passport-Voice.exe --diagnose，核对 VB-CABLE 两端、UDP 33333 和快捷键。输入法的开始/结束快捷键和 hold/tap 模式要按真实设置核对；不要把系统声音输出改成 CABLE Input。
+- Linux/Omarchy: 先确认是 wlroots Wayland 会话，然后 voxtype config get engine 必须打印 sensevoice、python3 linux/voice_forwarder.py --diagnose 三项全 [OK]，再 bash linux/install.sh。引擎不对就补 voxtype config set engine sensevoice 和 voxtype config set sensevoice.model sensevoice-small。LLM 的 API key 存登录密钥环，不要写进会被提交的文件。
+改任何配置前先备份(windows/voice-config.json、linux/voice-config.json)。
+改默认麦克风、装驱动、开防火墙前说明影响。33333 端口同时只能有一个转发器，起新的之前先停旧的；不要关闭整套防火墙。
 最后让我在记事本亲自说话，确认松开结束、文字出现、下键换行。未实际验证的环节明确说明，不自动把环境声音发到云端。
 ```
 

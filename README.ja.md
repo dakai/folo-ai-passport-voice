@@ -264,9 +264,12 @@ python3 linux/voice_tui.py set --provider openai --enable
 
 ```text
 まず README.md と docs/QUICKSTART.zh-CN.md を読んでください(この手順書は中国語です)。随身语音 のパソコン側だけを設定してください。端末本体のソースを再構築したり公開したりしないでください。ファームウェアは公式のプレイページから取得し、Source code ZIP をファームウェアとして扱わないでください。
-最初に windows/AI-Passport-Voice.exe --diagnose を実行し、VB-CABLE の両端、UDP 33333、ショートカットを確認してください。既存の設定は先にバックアップしてください。入力方式の開始/終了ショートカットと hold/tap の設定は、実際の設定と突き合わせて確認が必要です。
-既定のマイクの変更、ドライバーのインストール、ファイアウォールの開放の前には影響を説明してください。ファイアウォール全体を無効にせず、システムの再生デバイスを CABLE Input にしないでください。
-最後に私自身がメモ帳で話し、上ボタンを離すと認識が終わること、文字が出ること、下ボタンの短押しで改行が入ることを確認してください。実際には検証していない箇所を明示し、周囲の音を勝手にクラウドへ送らないでください。
+どの OS で動いているかを判断し、README の該当する節に従ってください:
+- Windows: 最初に windows/AI-Passport-Voice.exe --diagnose を実行し、VB-CABLE の両端、UDP 33333、ショートカットを確認してください。入力方式の開始/終了ショートカットと hold/tap の設定は実際の設定と突き合わせて確認し、システムの再生デバイスを CABLE Input にしないでください。
+- Linux/Omarchy: wlroots 系の Wayland セッションであることを確認し、voxtype config get engine が sensevoice を返すこと、python3 linux/voice_forwarder.py --diagnose が voxtype・wtype・UDP 33333 すべて [OK] であることを確かめてから bash linux/install.sh を実行してください。エンジンが違う場合は voxtype config set engine sensevoice と voxtype config set sensevoice.model sensevoice-small で補ってください。LLM の API key はログインキーリングに保存し、コミットされうるファイルには書かないでください。
+設定を変更する前に、既存の設定(windows/voice-config.json、linux/voice-config.json)をバックアップしてください。
+既定のマイクの変更、ドライバーのインストール、ファイアウォールの開放の前には影響を説明してください。ポート 33333 を使えるのは 1 つのフォワーダーだけなので、新しいものを起動する前に古いものを止めてください。ファイアウォール全体は無効にしないでください。
+最後に私自身がテキストエディターで話し、上ボタンを離すと認識が終わること、文字が出ること、下ボタンの短押しで改行が入ることを確認してください。実際には検証していない箇所を明示し、周囲の音を勝手にクラウドへ送らないでください。
 ```
 
 詳しくは [docs/CODEX_SETUP.zh-CN.md](docs/CODEX_SETUP.zh-CN.md)(中国語)。個人設定、録音、入力方式のアカウントは GitHub に載せないでください。本プロジェクトは認識用アカウントや ASR サービスを提供せず、すべての入力方式バージョンとの互換性も保証しません。

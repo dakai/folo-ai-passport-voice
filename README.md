@@ -264,9 +264,12 @@ Open your local agent in the extracted app folder and paste this:
 
 ```text
 First read README.md and docs/QUICKSTART.zh-CN.md (that guide is in Chinese). Help me configure only the computer side of 随身语音 — do not rebuild or publish the whole device source. Get the firmware from the official play page; never treat the Source code ZIP as firmware.
-Run windows/AI-Passport-Voice.exe --diagnose first and check both ends of VB-CABLE, UDP 33333 and the hotkey. Back up any existing config. My input method's start/stop shortcut and its hold/tap mode have to be checked against my real settings.
-Explain the impact before changing the default microphone, installing a driver or opening the firewall. Do not turn the firewall off, and do not set CABLE Input as the system playback device.
-Finally let me speak into Notepad myself and confirm that releasing the top button ends recognition, the text appears, and a short press on the bottom button sends a newline. State clearly which parts were not actually verified, and never send ambient audio to the cloud on your own.
+Work out which system I am on, then follow that section of the README:
+- Windows: run windows/AI-Passport-Voice.exe --diagnose first and check both ends of VB-CABLE, UDP 33333 and the hotkey. My input method's start/stop shortcut and its hold/tap mode have to be checked against my real settings, and CABLE Input must not become the system playback device.
+- Linux/Omarchy: confirm a wlroots Wayland session, then voxtype config get engine (must print sensevoice) and python3 linux/voice_forwarder.py --diagnose (voxtype, wtype, UDP 33333 all [OK]) before bash linux/install.sh. If the engine is wrong: voxtype config set engine sensevoice and voxtype config set sensevoice.model sensevoice-small. The LLM API key goes to the login keyring, never into a file that could be committed.
+Back up any existing config (windows/voice-config.json, linux/voice-config.json) before changing it.
+Explain the impact before changing the default microphone, installing a driver or opening the firewall. Port 33333 accepts one forwarder only, so stop the old one before starting another, and never turn the firewall off.
+Finally let me speak into a text editor myself and confirm that releasing the top button ends recognition, the text appears, and a short press on the bottom button sends a newline. State clearly which parts were not actually verified, and never send ambient audio to the cloud on your own.
 ```
 
 See [docs/CODEX_SETUP.zh-CN.md](docs/CODEX_SETUP.zh-CN.md) (Chinese). Keep personal config, recordings and input-method accounts out of GitHub. This project provides no recognition account or ASR service and cannot promise compatibility with every input-method version.

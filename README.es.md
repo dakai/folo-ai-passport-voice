@@ -264,9 +264,12 @@ Abre tu agente local en la carpeta descomprimida de la aplicación y pega esto:
 
 ```text
 Primero lee README.md y docs/QUICKSTART.zh-CN.md (esa guía está en chino). Ayúdame a configurar solo el lado del ordenador de 随身语音: no reconstruyas ni publiques el código completo del dispositivo. El firmware se obtiene de la página oficial de juegos; nunca trates el Source code ZIP como firmware.
-Ejecuta primero windows/AI-Passport-Voice.exe --diagnose y revisa los dos extremos de VB-CABLE, el UDP 33333 y el atajo. Haz copia de la configuración existente. El atajo de inicio/fin de mi método de entrada y su modo hold/tap hay que comprobarlos contra mi configuración real.
-Explica el impacto antes de cambiar el micrófono predeterminado, instalar un controlador o abrir el firewall. No desactives el firewall entero y no pongas CABLE Input como dispositivo de reproducción del sistema.
-Al final déjame hablar yo en el Bloc de notas y confirma que soltar el botón superior termina el reconocimiento, que aparece el texto y que una pulsación corta del botón inferior envía un salto de línea. Di claramente qué partes no se verificaron de verdad, y nunca envíes audio del ambiente a la nube por tu cuenta.
+Averigua en qué sistema estoy y sigue esa sección del README:
+- Windows: ejecuta primero windows/AI-Passport-Voice.exe --diagnose y revisa los dos extremos de VB-CABLE, el UDP 33333 y el atajo. El atajo de inicio/fin de mi método de entrada y su modo hold/tap hay que comprobarlos contra mi configuración real, y CABLE Input no debe quedar como dispositivo de reproducción del sistema.
+- Linux/Omarchy: confirma una sesión Wayland con wlroots; luego voxtype config get engine (debe imprimir sensevoice) y python3 linux/voice_forwarder.py --diagnose (voxtype, wtype y UDP 33333 en [OK]) antes de bash linux/install.sh. Si el motor no es el correcto: voxtype config set engine sensevoice y voxtype config set sensevoice.model sensevoice-small. La API key del LLM va al llavero de sesión, nunca a un archivo que pueda acabar en un commit.
+Haz copia de la configuración existente (windows/voice-config.json, linux/voice-config.json) antes de cambiarla.
+Explica el impacto antes de cambiar el micrófono predeterminado, instalar un controlador o abrir el firewall. El puerto 33333 admite un solo forwarder: detén el anterior antes de lanzar otro, y no desactives el firewall entero.
+Al final déjame hablar en un editor de texto y confirma que soltar el botón superior termina el reconocimiento, que aparece el texto y que una pulsación corta del botón inferior envía un salto de línea. Di claramente qué partes no se verificaron de verdad, y nunca envíes audio del ambiente a la nube por tu cuenta.
 ```
 
 Ver [docs/CODEX_SETUP.zh-CN.md](docs/CODEX_SETUP.zh-CN.md) (en chino). Mantén fuera de GitHub la configuración personal, las grabaciones y las cuentas del método de entrada. El proyecto no ofrece cuenta de reconocimiento ni servicio ASR y no garantiza compatibilidad con todas las versiones de los métodos de entrada.
