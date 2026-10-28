@@ -7,5 +7,6 @@
 - Windows 运行时涉及 Python、sounddevice、CFFI、PortAudio、PyInstaller，随附原文在 `licenses/`；各自许可证仍适用。
 - 设备端宿主使用 ESP-IDF、LVGL 等公开依赖时，应自行保留其许可证；本项目不打包这些库和维护者整机的共享实现。
 - VB-CABLE 与微信输入法是各自厂商的软件，安装程序不在本包内，从官网获取。
+- 首页图片 `docs/images/ai-passport.webp` 取自 FoloToy 口袋百宝箱玩法页的宣传图，版权归其所有，仅用于说明本功能对应的硬件；删掉它不影响任何代码。
 
 项目为社区作品，不代表 FoloToy、腾讯或 VB-Audio 官方支持。个人配置、录音和账号资料不属于公开内容。

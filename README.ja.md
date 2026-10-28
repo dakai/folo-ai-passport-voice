@@ -1,6 +1,6 @@
 # AI Passport 随身语音 · ワイヤレスマイクと音声ショートカット
 
-<img src="https://ai-passport.folotoy.cn/api/media/plays/community-1353f966/gallery/0.webp?v=3715-4" alt="AI Passport" width="330">
+<img src="docs/images/ai-passport.webp" alt="AI Passport" width="330">
 
 **言語:** [English](README.md) · [中文](README.zh-CN.md) · [Español](README.es.md) · 日本語
 

@@ -18,6 +18,13 @@ for name in sorted(files):
     assert not name.startswith(('firmware/', 'source/', 'backups/', 'dist/', 'build/')), name
     assert p.suffix.lower() not in {'.bin', '.exe', '.elf', '.map', '.zip', '.log', '.pyc'}, name
     assert p.name not in {'sdkconfig', 'sdkconfig.old', 'voice-config.json', 'muse_avatar_frames.c'}, name
+    if name.startswith('docs/images/'):
+        # The one reviewed exception to "text only": README artwork. Suffix,
+        # location and size are pinned so this cannot become a binary carrier,
+        # and these files are not scanned as text because they are not text.
+        assert p.suffix.lower() in {'.webp', '.png', '.jpg'}, name
+        assert p.stat().st_size <= 512 * 1024, name
+        continue
     text = p.read_text(encoding='utf-8-sig')
     if name != 'tools/check_scope.py':
         assert not re.search(r'gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|mgst_[A-Za-z0-9_-]{24,}|192\.168\.5\.4|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----', text), name
@@ -28,4 +35,5 @@ for name in sorted(files):
                 continue
             local = target.split('#')[0]
             assert not local or (p.parent / local).exists(), (name, target)
-print(f'PASS: {app} application-only allowlist, no firmware/binaries/secrets, document links')
+print(f'PASS: {app} application-only allowlist, no firmware/binaries/secrets '
+      f'(docs/images artwork only), document links')

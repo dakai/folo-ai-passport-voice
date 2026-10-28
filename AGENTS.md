@@ -153,7 +153,7 @@ CI in `.github/workflows/checks.yml` runs three jobs. The `windows` job installs
 - `device/main/apps/voice/audio_streamer.c`: capture, encode, and send pipeline.
 - `device/main/apps/voice/udp_audio.c`: device side UDP channel.
 - `device/main/apps/voice/ui_pixel_math.c`: pure UI math under host test.
-- `tools/check_scope.py`: fail-closed allowlist, secret, binary, and link gate.
+- `tools/check_scope.py`: fail-closed allowlist, secret, binary, and link gate. README artwork under `docs/images/` is the only binary exception: suffix, location and a 512 KB cap are pinned there.
 - `tools/test-host.sh`: host C test runner with `-std=c11 -Wall -Wextra -Werror`.
 - `PUBLIC_FILES.json`: explicit tracked-file allowlist. Add each new file here or CI fails.
 - `docs/DEVELOPMENT.zh-CN.md`: canonical local run and test commands.
@@ -205,4 +205,4 @@ Known gaps:
 - `windows/adpcm.py` has no tests in this repo. Referenced vector files `tests/test_adpcm.py` and `tests/test_adpcm.c` do not exist here. Cross-language drift stays undetected.
 - `windows/udp_transport.py` has no tests.
 - Real key injection, real audio endpoints, `main()`, and long-run behavior have no automated tests. `docs/VALIDATION.md` records hardware evidence and lists unverified items.
-- Adding any file requires an update to `PUBLIC_FILES.json`. `tools/check_scope.py` compares tracked files against that list and fails closed.
+- Adding any file requires an update to `PUBLIC_FILES.json`. `tools/check_scope.py` compares tracked files against that list and fails closed; images are accepted only under `docs/images/` (webp/png/jpg, ≤512 KB) and are not scanned as text.

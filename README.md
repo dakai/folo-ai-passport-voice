@@ -1,6 +1,6 @@
 # AI Passport 随身语音 · wireless microphone and voice hotkey
 
-<img src="https://ai-passport.folotoy.cn/api/media/plays/community-1353f966/gallery/0.webp?v=3715-4" alt="AI Passport" width="330">
+<img src="docs/images/ai-passport.webp" alt="AI Passport" width="330">
 
 **Languages:** English · [中文](README.zh-CN.md) · [Español](README.es.md) · [日本語](README.ja.md)
 
