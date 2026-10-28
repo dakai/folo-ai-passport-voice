@@ -39,13 +39,25 @@ foreground/accent/urgent/muted, 所以插件自己读这一个值; 读不到回�
 
 ## 安装
 
+一条命令, 不需要先克隆仓库:
+
 ```bash
-bash omarchy/install.sh
+curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
 ```
 
-同步到 `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, 校验, 再
-`omarchy plugin enable … --section right`。栏上没出现就 `omarchy restart shell`
-(热重载不会重建已有的栏组件)。
+脚本按顺序做: 克隆(只取 `omarchy/` 那一份)或直接用当前仓库 → 覆盖到
+`~/.config/omarchy/plugins/manchunx7.ai-passport-voice/` → 校验 → 让 shell 重新扫描
+→ 未启用时 `omarchy plugin enable … --section right`。重复运行等于更新,
+不会改变栏上位置。
+
+已在仓库里就 `bash omarchy/install.sh`; 仓库不在默认路径时它会顺手把
+`repoPath` 写进插件设置, 插件才知道 `linux/voice_tui.py` 在哪。
+
+为什么不用 `omarchy plugin add <url>`: 那个命令把**仓库根目录**当插件校验,
+而这里的根是整个项目、插件在 `omarchy/` 子目录。想指向 fork 或分支:
+`AIPV_REPO_URL=… AIPV_REF=… bash omarchy/install.sh`。
+
+栏上没出现就 `omarchy restart shell`(热重载不会重建已有的栏组件)。
 
 ## 设置
 

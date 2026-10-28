@@ -183,9 +183,12 @@ A passing computer-side diagnosis does not prove the input method recognises rea
 A bar icon for the forwarder, plus a panel that configures the LLM cleanup:
 
 ```bash
-bash omarchy/install.sh      # syncs to ~/.config/omarchy/plugins/ and enables it on the right
-omarchy restart shell        # only if the icon does not appear; hot reload does not rebuild the bar
+curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
 ```
+
+That fetches only the plugin, validates it, and puts it in the bar's right section. From a checkout: `bash omarchy/install.sh`. Re-running updates in place and keeps the bar placement. `omarchy plugin add <repo>` cannot do this — it validates the repository root as the plugin, and the plugin lives in `omarchy/`.
+
+If the icon does not appear: `omarchy restart shell` (hot reload does not rebuild the bar).
 
 The icon carries three states:
 

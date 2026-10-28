@@ -183,9 +183,12 @@ python3 -m unittest discover -s linux/tests -p "test_*.py" -v
 バーにフォワーダーのアイコンを出し、パネルから LLM 整形を設定できます。
 
 ```bash
-bash omarchy/install.sh      # ~/.config/omarchy/plugins/ へコピーし、右側に有効化
-omarchy restart shell        # アイコンが出ないときだけ。ホットリロードではバーは作り直されません
+curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
 ```
+
+プラグインだけを取得し、検証してバーの右側に置きます。リポジトリ内なら `bash omarchy/install.sh`。再実行は更新になり、バー上の位置は変わりません。`omarchy plugin add <repo>` は使えません — リポジトリのルートをプラグインとして検証するためで、ここではプラグインは `omarchy/` にあります。
+
+アイコンが出ないときは `omarchy restart shell`(ホットリロードではバーは作り直されません)。
 
 アイコンは 3 状態です。
 

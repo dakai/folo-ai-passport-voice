@@ -197,9 +197,14 @@ LLM 端点只打本机 loopback 桩服务。不碰真实硬件、不出网。改
 栏上一个图标显示转发器状态, 点开是面板, 顺手配 LLM 整理:
 
 ```bash
-bash omarchy/install.sh      # 同步到 ~/.config/omarchy/plugins/ 并放进栏右区
-omarchy restart shell        # 图标没出现才需要; 热重载不会重建栏组件
+curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
 ```
+
+只取插件那份、校验、放进栏右区。已在仓库里就 `bash omarchy/install.sh`; 重复运行等于更新,
+不改栏上位置。不能用 `omarchy plugin add <仓库>`: 它把仓库根目录当插件校验, 而这里插件在
+`omarchy/` 子目录。
+
+图标没出现就 `omarchy restart shell`(热重载不会重建栏组件)。
 
 图标三种状态:
 

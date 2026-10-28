@@ -183,9 +183,12 @@ Un diagnóstico correcto del lado del ordenador no prueba que el método de entr
 Un icono en la barra para el forwarder y un panel que configura la limpieza con LLM:
 
 ```bash
-bash omarchy/install.sh      # copia a ~/.config/omarchy/plugins/ y lo activa a la derecha
-omarchy restart shell        # solo si el icono no aparece; la recarga en caliente no reconstruye la barra
+curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
 ```
+
+Trae solo el plugin, lo valida y lo coloca en la sección derecha de la barra. Desde el repositorio: `bash omarchy/install.sh`. Volver a ejecutarlo actualiza sin cambiar la posición. `omarchy plugin add <repo>` no sirve aquí: valida la raíz del repositorio como plugin, y el plugin vive en `omarchy/`.
+
+Si el icono no aparece: `omarchy restart shell` (la recarga en caliente no reconstruye la barra).
 
 El icono tiene tres estados:
 
