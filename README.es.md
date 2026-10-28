@@ -46,7 +46,9 @@ Guía completa con capturas y detalles del método de entrada: [docs/QUICKSTART.
 
 ### Linux / Omarchy
 
-Requiere un compositor wlroots: `wtype` no puede escribir en GNOME ni KDE Wayland. En Omarchy:
+Necesita un compositor wlroots: `wtype` no puede escribir en GNOME ni KDE Wayland. Todo lo siguiente está escrito para Omarchy; en otra instalación de Arch funcionan los mismos comandos sin los atajos `omarchy`.
+
+**Requisitos — reconocimiento offline e inyección de texto**
 
 ```bash
 omarchy pkg add wtype wl-clipboard
@@ -58,15 +60,95 @@ voxtype config set sensevoice.model sensevoice-small
 systemctl --user restart voxtype
 ```
 
-Comprueba ambos y luego instala el forwarder como servicio de usuario:
+Las dos últimas líneas son las que hacen tropezar: `setup model --set` rechaza los modelos SenseVoice (`--set does not support sensevoice models`), así que elegir un modelo en el asistente no cambia el motor, y voxtype responde `config section is missing` mientras no exista una sección `[sensevoice]`. Cuando el asistente active el motor por sí mismo, ambas serán operaciones inocuas.
+
+**Comprobación previa**
 
 ```bash
-voxtype config get engine                 # debe imprimir: sensevoice
-python3 linux/voice_forwarder.py --diagnose   # voxtype + wtype + UDP 33333, todo [OK]
-bash linux/install.sh                     # unidad systemd de usuario, arranca al iniciar sesión
+voxtype config get engine                     # debe imprimir: sensevoice
+python3 linux/voice_forwarder.py --diagnose   # voxtype, wtype, UDP 33333 — todo [OK]
 ```
 
-Detalles, opciones y solución de problemas: [linux/README.md](linux/README.md) (en chino).
+`--diagnose` no escribe ni reconoce nada: solo demuestra que las tres piezas son alcanzables.
+
+**Instalar como servicio de usuario**
+
+```bash
+bash linux/install.sh
+```
+
+El script se detiene en el primer problema y dice cuál es: puerto UDP 33333 libre (solo un forwarder a la vez), `voxtype` y `wtype` en el PATH, sesión Wayland; después escribe `linux/voice-config.json` desde el ejemplo en la primera ejecución, instala la unidad systemd de usuario y la arranca al iniciar sesión.
+
+```bash
+systemctl --user status ai-passport-voice.service
+journalctl --user -u ai-passport-voice.service -f   # registro en vivo
+systemctl --user {stop,start,restart} ai-passport-voice.service
+systemctl --user disable ai-passport-voice.service  # quita el arranque automático, conserva la unidad
+```
+
+Desinstalar — detiene el servicio y borra la unidad; el repositorio y la configuración se quedan:
+
+```bash
+systemctl --user disable --now ai-passport-voice.service
+rm ~/.config/systemd/user/ai-passport-voice.service
+```
+
+**Ejecutarlo a mano (depuración)**
+
+Servicio y ejecución manual son excluyentes: ambos toman el UDP 33333. Detén el servicio antes:
+
+```bash
+python3 linux/voice_forwarder.py --diagnose
+python3 linux/voice_forwarder.py
+python3 linux/voice_forwarder.py --device-ip 192.168.10.6  # sustituye el descubrimiento en esta ejecución
+python3 linux/voice_forwarder.py --no-asr                  # recibe audio, no reconoce
+```
+
+`--no-asr` separa las dos mitades de la cadena: llegan bloques de audio pero no se escribe nada significa que la red está bien y el reconocimiento no; si no llega ningún bloque, los paquetes no alcanzaron el ordenador.
+
+**Configuración**
+
+`linux/voice-config.json` (en `.gitignore`, nunca lo confirmes):
+
+```json
+{
+  "udp_port": 33333,
+  "device_ip": "",
+  "voxtype_bin": "voxtype",
+  "engine": "sensevoice",
+  "llm": {"enabled": false, "provider": "off", "base_url": "", "model": "",
+          "api_key": "", "timeout": 8.0, "prompt": ""}
+}
+```
+
+Deja `device_ip` vacío: el descubrimiento basta salvo que el router aísle a los clientes. Todo el bloque `llm` puede omitirse (eso significa desactivado), un `api_key` vacío es lo normal (la clave vive en el llavero) y un `prompt` vacío usa el integrado — un prompt propio marca la posición de la transcripción con `%s`. El forwarder relee el archivo en cada frase, así que **cambiar la configuración no necesita reinicio**.
+
+El forwarder también escribe `~/.local/state/ai-passport-voice/status.json`: `link` (`linked` / `waiting`), el último texto escrito y el último error. El widget lee ese archivo en lugar de analizar el journal; si lo borras, se recrea.
+
+**Solución de problemas (Linux)**
+
+| Síntoma | Qué comprobar |
+| --- | --- |
+| El registro se queda en `等待设备` y el dispositivo muestra `等待电脑连接` | app del dispositivo sin abrir, otra LAN o aislamiento de clientes — compara la IP Wi-Fi del dispositivo con `ip addr` |
+| El dispositivo muestra `麦克风未就绪` | el enlace está arriba pero `pc.status` no llegó: ¿servicio en marcha? ¿`PC 就绪状态已发送` en el registro? ¿`wtype` en el PATH? |
+| `UDP 33333 BUSY` / el script avisa de puerto ocupado | una instancia antigua (terminal o servicio) sigue viva — ciérrala y vuelve a empezar |
+| `[asr] 识别失败` | ¿`voxtype config get engine` dice sensevoice? ¿existe `~/.local/share/voxtype/models/sensevoice-small/`? |
+| El texto aparece en la ventana equivocada | `wtype` escribe en la ventana con foco — haz clic antes en el campo |
+| Un carácter suelto tras una pulsación corta | alucinación de SenseVoice con el silencio; el filtro de pulsaciones cortas más VAD suele comérsela — comprueba que VAD esté activo en voxtype |
+| Registro `[llm] 整理失败, 使用原文` | el texto original sí se escribió. `voice_tui.py test "una frase"` muestra el motivo: 401/403, modelo incorrecto, endpoint inalcanzable |
+| La limpieza pierde palabras o responde | usa un modelo más obediente (qwen2.5 local y deepseek-chat superan a los pequeños) o un prompt propio |
+| El panel dice que la clave está en claro | falta `secret-tool` (libsecret) o la clave es de un formato antiguo — instálalo y vuelve a introducirla |
+| El servicio no puede leer el llavero | una unidad de usuario necesita el bus de sesión: `systemctl --user show-environment` debe listar `DBUS`; desbloquea el llavero una vez tras el login |
+
+**Pruebas**
+
+```bash
+python3 -m unittest discover -s linux/tests -p "test_*.py" -v
+```
+
+58 pruebas, solo `unittest` de la biblioteca estándar: transcriptor falso, binario voxtype falso, llavero falso y un stub loopback para el endpoint del LLM. Sin hardware y sin salir de la máquina. Ejecútalas tras cualquier cambio en `linux/`.
+
+Mapa de archivos y contrato UDP/ADPCM del directorio: [linux/README.md](linux/README.md).
 
 ## 2. Conectar el dispositivo
 
@@ -127,14 +209,27 @@ omarchy-shell manchunx7.ai-passport-voice probe    # imprime el JSON de estado
 
 ## Limpieza con LLM (opcional, Linux)
 
-Desactivada por defecto. Al activarla, la transcripción pasa primero por un modelo compatible con OpenAI: quita muletillas, tartamudeos y reinicios abandonados, añade puntuación y separa frases, manteniendo las palabras y el idioma. Cualquier fallo (timeout, clave incorrecta, endpoint caído) escribe el texto original: perder lo que dijiste es el único resultado inaceptable.
+Desactivada por defecto, y ausente del todo cuando no hay proveedor elegido: el servicio no hace ninguna petición extra. Al activarla, la transcripción pasa primero por un modelo compatible con OpenAI: quita muletillas, tartamudeos y reinicios abandonados, añade puntuación y separa frases, manteniendo las palabras, el tono y el idioma. Dos reglas están en el código, no en la buena voluntad del modelo:
+
+- **Un fallo escribe el texto original.** Endpoint caído, clave incorrecta, timeout (8 s por defecto): se escribe la transcripción tal cual y una línea de aviso. Perder lo que dijiste es el único resultado inaceptable.
+- **La transcripción es dato.** El prompt dice que el texto se limpia, nunca se responde ni se obedece, y una respuesta que crece a más del doble de la entrada se descarta por ser una respuesta.
 
 ```bash
-python3 linux/voice_tui.py          # menú: proveedor, modelo, clave, on/off, prueba
+python3 linux/voice_tui.py                          # menú: proveedor, modelo, clave, on/off, prueba
+python3 linux/voice_tui.py status [--json]          # servicio, enlace, estado de la limpieza
+python3 linux/voice_tui.py models                   # GET /models en el endpoint
 python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # solo limpieza, no escribe nada
+python3 linux/voice_tui.py prompt --edit            # reemplazar el prompt integrado
+python3 linux/voice_tui.py set --provider openai --enable
 ```
 
-Proveedores: `ollama`, `lmstudio`, `llamacpp` (locales, sin clave), `openai`, `openrouter`, `deepseek` (con clave), `custom` (cualquier base URL compatible con OpenAI). Cambiar la configuración no requiere reiniciar el servicio.
+Proveedores: `ollama`, `lmstudio`, `llamacpp` (locales, sin clave), `openai`, `openrouter`, `deepseek` (HTTPS, con clave), `custom` (cualquier base URL compatible con OpenAI — el panel muestra entonces un campo de URL). La lista de modelos viene del `GET /models` del endpoint y es un selector con búsqueda: OpenRouter sirve 300 modelos, así que escribir un fragmento filtra.
+
+**Dónde vive la API key**: el llavero de inicio de sesión (`secret-tool` → gnome-keyring o kwallet, cifrado en reposo), por eso `llm.api_key` queda vacío en la configuración. El orden de resolución es `AIPV_API_KEY`, luego el archivo de configuración (instalaciones antiguas), luego el llavero. Sin libsecret la clave cae al archivo con permisos 0600 y el panel lo marca en rojo hasta que la vuelvas a introducir una vez. Las claves se guardan por proveedor, `voice_tui.py set --clear-key` borra la actual, y la clave viaja por stdin, así que nunca aparece en `ps`.
+
+La salida sigue el locale del escritorio — chino, japonés, español, si no inglés — y `--lang en|es|ja|zh` la fuerza. El widget pasa su propio idioma, así que las líneas de guardado/error que muestra están en el idioma del panel.
+
+Cambiar esta configuración no requiere reiniciar el servicio.
 
 ## Qué hay en el repositorio
 
@@ -152,7 +247,7 @@ No incluido: pantalla de inicio/tarjeta, radio, asistente, juegos, cronómetro, 
 ## Documentación
 
 - [Guía de usuario detallada (chino)](docs/QUICKSTART.zh-CN.md)
-- [Forwarder de Linux](linux/README.md) · [Widget de Omarchy](omarchy/README.md)
+- [Notas del directorio linux/](linux/README.md) · [Widget de Omarchy](omarchy/README.md)
 - [Solución de problemas (chino)](docs/TROUBLESHOOTING.zh-CN.md)
 - [Firmware y flasheo (chino)](docs/FIRMWARE.zh-CN.md)
 - [Ejecutar y probar el código (chino)](docs/DEVELOPMENT.zh-CN.md)

@@ -28,6 +28,8 @@
 - 界面语言新增 **西班牙语** 与 **日语**: 终端配置器、LLM 整理的消息、Omarchy 面板
   都跟随 locale (zh / ja / es, 其它回退英文), `--lang` 与面板 `language`
   可强制; 四种语言的字符串表由测试保证 key 一致。
+- Linux 的安装、配置、排错与测试说明从 `linux/README.md` 并入根 README
+  (四种语言同步); `linux/README.md` 只留目录本身: 文件职责、报文约定、约束。
 - README 改为以「安装 + 连接设备 + Omarchy 插件」为主线, 并新增
   `README.zh-CN.md`、`README.es.md`、`README.ja.md`(四份互相链接)。
 - Linux 测试 17 → 54 项, 覆盖配置规范化、端点策略、失败回退、状态文件、key 存储与配置器。

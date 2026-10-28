@@ -23,7 +23,7 @@ py -3.11 -m venv .venv
 
 ## Linux 源码运行与测试
 
-Linux 端只用标准库, 不需要 venv; 系统工具按 [linux/README](../linux/README.md) 装好。
+Linux 端只用标准库, 不需要 venv; 系统工具按 [根 README 的 Linux 一节](../README.md) 装好。
 
 ```bash
 python3 linux/voice_forwarder.py --diagnose     # 检查 voxtype、wtype、UDP 33333

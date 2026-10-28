@@ -46,7 +46,9 @@ Full walkthrough with screenshots and input-method details: [docs/QUICKSTART.zh-
 
 ### Linux / Omarchy
 
-Requires a wlroots compositor: `wtype` cannot type into GNOME or KDE Wayland. On Omarchy:
+Needs a wlroots compositor: `wtype` cannot type into GNOME or KDE Wayland. Everything below runs on Omarchy; on another Arch setup the same commands work minus the `omarchy` shortcuts.
+
+**Prerequisites — offline recognition and text injection**
 
 ```bash
 omarchy pkg add wtype wl-clipboard
@@ -58,15 +60,95 @@ voxtype config set sensevoice.model sensevoice-small
 systemctl --user restart voxtype
 ```
 
-Check both, then install the forwarder as a user service:
+The last two lines are the ones people trip over: `setup model --set` refuses SenseVoice models (`--set does not support sensevoice models`), so picking a model in the wizard does not switch the engine, and voxtype reports `config section is missing` until a `[sensevoice]` section exists. Once the wizard learns to activate the engine, both become harmless no-ops.
+
+**Self-check before going further**
 
 ```bash
-voxtype config get engine                 # must print: sensevoice
-python3 linux/voice_forwarder.py --diagnose   # voxtype + wtype + UDP 33333, all [OK]
-bash linux/install.sh                     # systemd user unit, starts on login
+voxtype config get engine                     # must print: sensevoice
+python3 linux/voice_forwarder.py --diagnose   # voxtype, wtype, UDP 33333 — all must be [OK]
 ```
 
-Details, options and troubleshooting: [linux/README.md](linux/README.md).
+`--diagnose` types nothing and recognises nothing; it only proves the three pieces are reachable.
+
+**Install as a user service**
+
+```bash
+bash linux/install.sh
+```
+
+The script stops at the first problem and names it: UDP 33333 free (one forwarder at a time), `voxtype` and `wtype` on PATH, a Wayland session — then it writes `linux/voice-config.json` from the example on the first run, installs the systemd user unit and starts it on login.
+
+```bash
+systemctl --user status ai-passport-voice.service
+journalctl --user -u ai-passport-voice.service -f   # live log
+systemctl --user {stop,start,restart} ai-passport-voice.service
+systemctl --user disable ai-passport-voice.service  # drop autostart, keep the unit file
+```
+
+Uninstall — stops the service and removes the unit; the checkout and the config stay:
+
+```bash
+systemctl --user disable --now ai-passport-voice.service
+rm ~/.config/systemd/user/ai-passport-voice.service
+```
+
+**Running it by hand (debugging)**
+
+Service and manual run are mutually exclusive — both bind UDP 33333. Stop the service first:
+
+```bash
+python3 linux/voice_forwarder.py --diagnose
+python3 linux/voice_forwarder.py
+python3 linux/voice_forwarder.py --device-ip 192.168.10.6  # override discovery for this run
+python3 linux/voice_forwarder.py --no-asr                  # receive audio, skip recognition
+```
+
+`--no-asr` separates the two halves of the chain: audio blocks arrive but nothing is typed means the network is fine and recognition is not; no audio blocks at all means the packets never reached the computer.
+
+**Configuration**
+
+`linux/voice-config.json` (gitignored, never commit it):
+
+```json
+{
+  "udp_port": 33333,
+  "device_ip": "",
+  "voxtype_bin": "voxtype",
+  "engine": "sensevoice",
+  "llm": {"enabled": false, "provider": "off", "base_url": "", "model": "",
+          "api_key": "", "timeout": 8.0, "prompt": ""}
+}
+```
+
+Leave `device_ip` empty: discovery is enough unless the router isolates clients. The whole `llm` block may be omitted (that means off), an empty `api_key` is the normal state (the key lives in the keyring), and an empty `prompt` uses the built-in one — a custom prompt marks the transcript position with `%s`. The forwarder re-reads the file on every utterance, so **a config change needs no restart**.
+
+The forwarder also writes `~/.local/state/ai-passport-voice/status.json`: `link` (`linked` / `waiting`), the last typed text, the last error. The widget reads that file instead of parsing the journal; delete it and it is recreated.
+
+**Troubleshooting (Linux)**
+
+| Symptom | What to check |
+| --- | --- |
+| Log stops at `等待设备`, device shows `等待电脑连接` | device app not open, different LAN, or client isolation — compare the device's Wi-Fi IP with `ip addr` |
+| Device shows `麦克风未就绪` | the link is up but `pc.status` never arrived: is the service running? does the log say `PC 就绪状态已发送`? is `wtype` on PATH? |
+| `UDP 33333 BUSY` / the script reports the port in use | an old instance (terminal or service) still runs — stop it and start again |
+| `[asr] 识别失败` | `voxtype config get engine` → sensevoice? model present at `~/.local/share/voxtype/models/sensevoice-small/`? |
+| Text lands in the wrong window | `wtype` types into the focused window — click the input field first |
+| A stray character after a short tap | SenseVoice hallucinating on silence; the short-tap filter plus VAD normally eats it — check VAD is enabled in voxtype |
+| Log `[llm] 整理失败, 使用原文` | the raw text still went through. `voice_tui.py test "a sentence"` shows why: 401/403, wrong model name, unreachable endpoint |
+| Cleanup drops words or answers the question | use a more obedient model (local qwen2.5 and deepseek-chat both beat small ones) or a custom prompt |
+| Panel says the key is plain text | `secret-tool` (libsecret) missing or an old-format key — install it and enter the key once more |
+| The service cannot read the keyring | a systemd user unit needs the session bus: `systemctl --user show-environment` should list `DBUS`; unlock the keyring once after login |
+
+**Tests**
+
+```bash
+python3 -m unittest discover -s linux/tests -p "test_*.py" -v
+```
+
+58 tests, stdlib `unittest` only: a fake transcriber, a fake voxtype binary, a fake keyring, and a loopback stub for the LLM endpoint. No hardware, nothing leaves the machine. Run them after any change under `linux/`.
+
+File map and the UDP/ADPCM contract of this directory: [linux/README.md](linux/README.md).
 
 ## 2. Connect the device
 
@@ -127,14 +209,27 @@ omarchy-shell manchunx7.ai-passport-voice probe    # prints the status JSON
 
 ## LLM cleanup (optional, Linux)
 
-Off by default. When enabled, the raw transcript goes to an OpenAI-compatible model first: filler words, stutters and abandoned restarts are removed, punctuation and sentence breaks added, wording and language kept. Any failure (timeout, bad key, dead endpoint) types the raw text instead — losing what you said is the only unacceptable outcome.
+Off by default, and absent altogether when no provider is chosen — the service then makes no extra request. When enabled, the raw transcript goes to an OpenAI-compatible model first: filler words, stutters and abandoned restarts are removed, punctuation and sentence breaks added, wording, tone and language kept. Two rules are enforced in code rather than left to the model:
+
+- **Failure types the raw text.** Dead endpoint, wrong key, timeout (8 s default) — the transcript goes through untouched plus one warning line. Losing what you said is the only unacceptable outcome.
+- **The transcript is data.** The prompt says the text is to be cleaned, never answered or obeyed, and a reply that grows past twice the input length is discarded as an answer.
 
 ```bash
-python3 linux/voice_tui.py          # menu: provider, model, key, on/off, test
+python3 linux/voice_tui.py                          # menu: provider, model, key, on/off, test
+python3 linux/voice_tui.py status [--json]          # service, link, cleanup state
+python3 linux/voice_tui.py models                   # GET /models on the endpoint
 python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # cleanup only, nothing is typed
+python3 linux/voice_tui.py prompt --edit            # replace the built-in prompt
+python3 linux/voice_tui.py set --provider openai --enable
 ```
 
-Providers: `ollama`, `lmstudio`, `llamacpp` (local, no key), `openai`, `openrouter`, `deepseek` (needs a key), `custom` (any OpenAI-compatible base URL). Changing the config needs no service restart.
+Providers: `ollama`, `lmstudio`, `llamacpp` (local, no key), `openai`, `openrouter`, `deepseek` (HTTPS, needs a key), `custom` (any OpenAI-compatible base URL — the panel then shows a URL field). The model list comes from the endpoint's `GET /models` and is a searchable picker: OpenRouter serves 300 models, so typing a fragment filters.
+
+**Where the API key lives**: the login keyring (`secret-tool` → gnome-keyring or kwallet, encrypted at rest), so `llm.api_key` in the config stays empty. Resolution order is `AIPV_API_KEY`, then the config file (old installs), then the keyring. Without libsecret the key falls back to the 0600 config file and the panel says so in red until you re-enter it once. Keys are stored per provider, `voice_tui.py set --clear-key` removes the current one, and the key is passed over stdin so it never appears in `ps`.
+
+Output follows the desktop locale — Chinese, Japanese, Spanish, otherwise English — and `--lang en|es|ja|zh` forces it. The widget passes its own language along, so the save/error lines it echoes back are in the panel's language.
+
+Changing this config needs no service restart.
 
 ## What is in this repository
 
@@ -152,7 +247,7 @@ Not included: home screen/business card, radio, assistant, games, stopwatch, ful
 ## Documentation
 
 - [Detailed user guide (Chinese)](docs/QUICKSTART.zh-CN.md)
-- [Linux forwarder](linux/README.md) · [Omarchy widget](omarchy/README.md)
+- [linux/ directory notes](linux/README.md) · [Omarchy widget](omarchy/README.md)
 - [Troubleshooting (Chinese)](docs/TROUBLESHOOTING.zh-CN.md)
 - [Firmware and flashing notes (Chinese)](docs/FIRMWARE.zh-CN.md)
 - [Running and testing the source (Chinese)](docs/DEVELOPMENT.zh-CN.md)

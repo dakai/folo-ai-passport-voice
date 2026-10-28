@@ -46,7 +46,9 @@ USB は給電と書き込み専用です。接続しても USB マイクには�
 
 ### Linux / Omarchy
 
-wlroots 系コンポジターが必要です。`wtype` は GNOME や KDE の Wayland には入力できません。Omarchy では次の順に実行します。
+wlroots 系コンポジターが必要です。`wtype` は GNOME や KDE の Wayland には入力できません。以下は Omarchy 向けに書いていますが、他の Arch 環境では `omarchy` のショートカットを外せば同じコマンドが使えます。
+
+**前提: オフライン認識とテキスト入力**
 
 ```bash
 omarchy pkg add wtype wl-clipboard
@@ -58,15 +60,95 @@ voxtype config set sensevoice.model sensevoice-small
 systemctl --user restart voxtype
 ```
 
-2 つの確認を通してから、フォワーダーをユーザーサービスとしてインストールします。
+つまずきやすいのは最後の 2 行です。`setup model --set` は SenseVoice のモデルを拒否する(`--set does not support sensevoice models`)ため、ウィザードでモデルを選んでもエンジンは切り替わらず、`[sensevoice]` セクションが無い間は `config section is missing` になります。ウィザードがエンジンを有効化できるようになれば、どちらも無害な空操作になります。
+
+**先に自己診断**
 
 ```bash
-voxtype config get engine                 # sensevoice と表示されること
-python3 linux/voice_forwarder.py --diagnose   # voxtype + wtype + UDP 33333 がすべて [OK]
-bash linux/install.sh                     # systemd ユーザーユニット、ログイン時に自動起動
+voxtype config get engine                     # sensevoice と表示されること
+python3 linux/voice_forwarder.py --diagnose   # voxtype、wtype、UDP 33333 がすべて [OK]
 ```
 
-詳細・オプション・トラブル対処: [linux/README.md](linux/README.md)(中国語)。
+`--diagnose` は入力も認識もしません。3 つの部品に到達できることだけを示します。
+
+**ユーザーサービスとしてインストール**
+
+```bash
+bash linux/install.sh
+```
+
+スクリプトは最初の問題で止まり、何が足りないかを言います: UDP 33333 が空いているか(フォワーダーは同時に 1 つ)、`voxtype` と `wtype` が PATH にあるか、Wayland セッションか。そのうえで初回は例から `linux/voice-config.json` を作り、systemd ユーザーユニットを入れてログイン時に起動します。
+
+```bash
+systemctl --user status ai-passport-voice.service
+journalctl --user -u ai-passport-voice.service -f   # リアルタイムのログ
+systemctl --user {stop,start,restart} ai-passport-voice.service
+systemctl --user disable ai-passport-voice.service  # 自動起動だけ解除 (ユニットは残す)
+```
+
+アンインストール — サービスを止めてユニットを消します。リポジトリと設定は残ります。
+
+```bash
+systemctl --user disable --now ai-passport-voice.service
+rm ~/.config/systemd/user/ai-passport-voice.service
+```
+
+**手動実行 (デバッグ)**
+
+サービスと手動実行は同時に使えません。どちらも UDP 33333 を占有します。先にサービスを止めます。
+
+```bash
+python3 linux/voice_forwarder.py --diagnose
+python3 linux/voice_forwarder.py
+python3 linux/voice_forwarder.py --device-ip 192.168.10.6  # この実行だけ自動探索を上書き
+python3 linux/voice_forwarder.py --no-asr                  # 音声は受けるが認識しない
+```
+
+`--no-asr` は経路の前半と後半を切り分けます。音声ブロックは届くのに何も入力されないならネットワークは正常で認識側の問題、音声ブロックが無いならパケットがパソコンに届いていません。
+
+**設定**
+
+`linux/voice-config.json` (gitignored、コミットしない):
+
+```json
+{
+  "udp_port": 33333,
+  "device_ip": "",
+  "voxtype_bin": "voxtype",
+  "engine": "sensevoice",
+  "llm": {"enabled": false, "provider": "off", "base_url": "", "model": "",
+          "api_key": "", "timeout": 8.0, "prompt": ""}
+}
+```
+
+`device_ip` は空のままで構いません。ルーターがクライアントを分離している場合だけ必要です。`llm` ブロックは丸ごと省略できます(省略 = オフ)、`api_key` が空なのは正常な状態(キーはキーリングにあります)、`prompt` が空なら内蔵プロンプトを使います。独自プロンプトでは `%s` が原文の位置です。フォワーダーは発話のたびにこのファイルを読み直すので、**設定変更に再起動は不要**です。
+
+フォワーダーは `~/.local/state/ai-passport-voice/status.json` も書きます: `link`(`linked` / `waiting`)、最後に入力したテキスト、最後のエラー。ウィジェットは journal を解析せずこのファイルを読みます。削除しても再生成されます。
+
+**トラブル対処 (Linux)**
+
+| 症状 | 確認すること |
+| --- | --- |
+| ログが `等待设备` で止まり、デバイスに `等待电脑连接` が出る | デバイスのアプリ未起動、別の LAN、クライアント分離 — デバイスの Wi-Fi IP を `ip addr` と比べる |
+| デバイスに `麦克风未就绪` が出る | リンクはあるが `pc.status` が届いていない: サービスは動いているか、ログに `PC 就绪状态已发送` があるか、`wtype` は PATH にあるか |
+| `UDP 33333 BUSY` / ポート占有のエラー | 古いインスタンス(ターミナルかサービス)が残っている — 止めてから起動し直す |
+| `[asr] 识别失败` | `voxtype config get engine` が sensevoice か。`~/.local/share/voxtype/models/sensevoice-small/` があるか |
+| 別のウィンドウに入力される | `wtype` はフォーカス中のウィンドウに入力します — 先に入力欄をクリック |
+| 短いタップで変な 1 文字が出る | 無音に対する SenseVoice の幻覚。短タップのフィルタと VAD で通常は消えます — voxtype 側の VAD が有効か確認 |
+| ログに `[llm] 整理失败, 使用原文` | 原文は入力されています。`voice_tui.py test "一文"` で理由が出ます: 401/403、モデル名の誤り、エンドポイント不達 |
+| 整形で言葉が抜ける、質問に答えてしまう | より従順なモデル(ローカルの qwen2.5、deepseek-chat は小型モデルより安定)か独自プロンプトに変更 |
+| パネルがキーは平文だと表示する | `secret-tool` (libsecret) が無いか古い形式のキー — 導入後にもう一度入力 |
+| サービスがキーリングを読めない | systemd ユーザーユニットにはセッションバスが必要: `systemctl --user show-environment` に `DBUS` があるか。ログイン後に一度キーリングを解錠 |
+
+**テスト**
+
+```bash
+python3 -m unittest discover -s linux/tests -p "test_*.py" -v
+```
+
+58 個のテスト、標準ライブラリの `unittest` のみ: 偽の転写器、偽の voxtype バイナリ、偽のキーリング、そして LLM エンドポイントには loopback のスタブ。ハードウェアに触れず、外部へも出ません。`linux/` を変更したら必ず実行してください。
+
+このディレクトリのファイル一覧と UDP/ADPCM の取り決め: [linux/README.md](linux/README.md)。
 
 ## 2. デバイスを接続する
 
@@ -127,14 +209,27 @@ omarchy-shell manchunx7.ai-passport-voice probe    # 状態 JSON を表示
 
 ## LLM 整形(任意、Linux)
 
-既定では無効です。有効にすると、認識した原文をまず OpenAI 互換モデルに渡します。フィラー(「えー」「あの」)、吃音、言い直しを除き、句読点と文の区切りを補い、言葉づかいと言語はそのまま残します。失敗(タイムアウト、キー誤り、エンドポイント不達)の場合は原文を入力します。話した内容を失うことだけが許されない失敗です。
+既定では無効で、provider を選んでいなければこの処理自体が存在しません(サービスは余分な通信をしません)。有効にすると、認識した原文をまず OpenAI 互換モデルに渡します。フィラー、吃音、言い直しを除き、句読点と文の区切りを補い、言葉づかい・口調・言語はそのまま残します。次の 2 点はモデルの善意ではなくコードで担保します。
+
+- **失敗したら原文を入力する。** エンドポイント不達、キー誤り、タイムアウト(既定 8 秒)では、原文をそのまま入力し警告を 1 行出します。話した内容を失うことだけが許されない失敗です。
+- **原文はデータであり指示ではない。** プロンプトは「整形する対象であり、答えたリも従ったりしない」と明示し、出力が入力の 2 倍を超えたら回答とみなして破棄します。
 
 ```bash
-python3 linux/voice_tui.py          # メニュー: プロバイダー / モデル / キー / オンオフ / テスト
-python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 整形結果だけ表示、入力はしない
+python3 linux/voice_tui.py                          # メニュー: プロバイダー / モデル / キー / オンオフ / テスト
+python3 linux/voice_tui.py status [--json]          # サービス、リンク、整形の状態
+python3 linux/voice_tui.py models                   # エンドポイントの GET /models
+python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 整形結果だけ、入力はしない
+python3 linux/voice_tui.py prompt --edit            # 内蔵プロンプトを置き換え
+python3 linux/voice_tui.py set --provider openai --enable
 ```
 
-プロバイダー: `ollama`、`lmstudio`、`llamacpp`(ローカル、キー不要)、`openai`、`openrouter`、`deepseek`(キー必要)、`custom`(任意の OpenAI 互換 base URL)。設定変更にサービスの再起動は不要です。
+プロバイダー: `ollama`、`lmstudio`、`llamacpp` (ローカル、キー不要)、`openai`、`openrouter`、`deepseek` (HTTPS、キー必要)、`custom` (任意の OpenAI 互換 base URL — パネルに URL 欄が増えます)。モデル一覧はエンドポイントの `GET /models` から取り、検索できる選択リストにします。OpenRouter は 300 個あるので、断片を入力すると絞り込めます。
+
+**API キーの保存先**: ログインキーリング (`secret-tool` → gnome-keyring または kwallet、保存時に暗号化) なので、設定の `llm.api_key` は空のままです。解決順は `AIPV_API_KEY`、設定ファイル(古い構成)、キーリング。libsecret が無い場合は権限 0600 の設定ファイルに退避し、パネルは一度入力し直すまで赤で表示します。キーは provider ごとに保存され、`voice_tui.py set --clear-key` で現在の項目を削除できます。キーは stdin で渡すので `ps` には出ません。
+
+出力はデスクトップの locale に従います — 中国語、日本語、スペイン語、それ以外は英語 — で、`--lang en|es|ja|zh` で強制できます。ウィジェットは自分の言語を渡すので、パネルに表示される保存/エラーの行もパネルと同じ言語になります。
+
+この設定の変更にサービスの再起動は不要です。
 
 ## リポジトリの内容
 
@@ -152,7 +247,7 @@ python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 整形結�
 ## ドキュメント
 
 - [詳しい使用手順(中国語)](docs/QUICKSTART.zh-CN.md)
-- [Linux フォワーダー](linux/README.md) · [Omarchy ウィジェット](omarchy/README.md)
+- [linux/ ディレクトリの説明](linux/README.md) · [Omarchy ウィジェット](omarchy/README.md)
 - [トラブル対処(中国語)](docs/TROUBLESHOOTING.zh-CN.md)
 - [ファームウェアと書き込みの注意(中国語)](docs/FIRMWARE.zh-CN.md)
 - [ソースの実行とテスト(中国語)](docs/DEVELOPMENT.zh-CN.md)

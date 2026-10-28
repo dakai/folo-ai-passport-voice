@@ -135,6 +135,7 @@ CI in `.github/workflows/checks.yml` runs three jobs. The `windows` job installs
 
 - `windows/hotkey_forwarder.py`: companion entry point, `Forwarder`, `KeyInjector`, `AudioSink`, config load, CLI flags.
 - `windows/udp_transport.py`: Python side of the UDP wire spec with port and frame-type constants.
+- `linux/README.md`: directory notes only (file map, wire contract, constraints); the user-facing Linux guide lives in the root README.
 - `linux/voice_config.py`: sole reader/writer of `voice-config.json` (0600, atomic), `~/.local/state/ai-passport-voice/status.json`, and the API key (`secret-tool` keyring first, config file only as the no-libsecret fallback; resolution order env → file → keyring).
 - `linux/llm_cleanup.py`: OpenAI-compatible transcript cleanup, provider catalog, `PROMPT`, fail-open wrapper. Its messages and `voice_tui.py`'s output follow `voice_config.resolve_lang()` (en/es/ja/zh); `voice_tui.set_lang()` also pins that choice process-wide so echoed lines match the panel the plugin draws.
 - `linux/voice_tui.py`: interactive configurator plus the `status`/`set`/`models`/`test`/`service` subcommands the plugin calls.

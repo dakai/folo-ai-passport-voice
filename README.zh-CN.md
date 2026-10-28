@@ -46,7 +46,9 @@ USB 只用于供电和烧录: 插上 USB **不会**让设备变成 USB 麦克风
 
 ### Linux / Omarchy
 
-需要 wlroots 合成器: `wtype` 在 GNOME/KDE Wayland 上无法键入。Omarchy 上按顺序:
+需要 wlroots 合成器: `wtype` 在 GNOME/KDE Wayland 上无法键入。以下步骤按 Omarchy 写; 其它 Arch 环境去掉 `omarchy` 快捷命令即可。
+
+**前置条件: 离线识别与文字注入**
 
 ```bash
 omarchy pkg add wtype wl-clipboard
@@ -58,15 +60,109 @@ voxtype config set sensevoice.model sensevoice-small
 systemctl --user restart voxtype
 ```
 
-两项自检都过, 再把转发器装成用户服务:
+前四条是 Omarchy 惯用路径(交互式, 不用记参数)。后两条是必需的补齐:
+`setup model --set` 明确拒绝 sensevoice 模型(`--set does not support
+sensevoice models`), 光选模型不会把引擎切过去; voxtype 还要求 `[sensevoice]`
+小节真实存在, 缺了就报 `config section is missing`。等向导学会自动激活后,
+这两条会变成无害的空操作。
+
+**先自检**
 
 ```bash
-voxtype config get engine                 # 必须打印 sensevoice
-python3 linux/voice_forwarder.py --diagnose   # voxtype + wtype + UDP 33333, 全部 [OK]
-bash linux/install.sh                     # systemd user 单元, 登录即自启
+voxtype config get engine                     # 必须打印 sensevoice
+python3 linux/voice_forwarder.py --diagnose   # voxtype、wtype、UDP 33333 全部 [OK]
 ```
 
-细节、选项与排错: [linux/README.md](linux/README.md)。
+`--diagnose` 不按键、不识别, 只证明这三样都可达。
+
+**装成用户服务**
+
+```bash
+bash linux/install.sh
+```
+
+脚本按顺序检查, 任一步失败即停并说明缺什么: UDP 33333 是否空闲(端口同时只能有一个
+转发器)、`voxtype` 与 `wtype` 是否在 PATH、是否 Wayland 会话; 然后首次运行从
+`voice-config.example.json` 生成 `linux/voice-config.json`, 安装 systemd user
+单元并 `enable --now`, 登录即自启。
+
+```bash
+systemctl --user status ai-passport-voice.service
+journalctl --user -u ai-passport-voice.service -f   # 实时日志
+systemctl --user {stop,start,restart} ai-passport-voice.service
+systemctl --user disable ai-passport-voice.service  # 关自启(单元文件保留)
+```
+
+卸载: 停服务并删单元, 仓库与配置都保留:
+
+```bash
+systemctl --user disable --now ai-passport-voice.service
+rm ~/.config/systemd/user/ai-passport-voice.service
+```
+
+**手动运行(调试)**
+
+服务与手动运行**只能二选一**, 都会绑 UDP 33333。手动前先停服务:
+
+```bash
+python3 linux/voice_forwarder.py --diagnose
+python3 linux/voice_forwarder.py
+python3 linux/voice_forwarder.py --device-ip 192.168.10.6  # 本次覆盖自动探测
+python3 linux/voice_forwarder.py --no-asr                  # 只收音频不识别
+```
+
+`--no-asr` 能把链路问题一分为二: 收到音频块但不上屏 = 网络通、问题在识别侧;
+连音频块都没有 = 报文没到电脑, 问题在网络侧。
+
+**配置**
+
+`linux/voice-config.json`(gitignored, 永不提交):
+
+```json
+{
+  "udp_port": 33333,
+  "device_ip": "",
+  "voxtype_bin": "voxtype",
+  "engine": "sensevoice",
+  "llm": {"enabled": false, "provider": "off", "base_url": "", "model": "",
+          "api_key": "", "timeout": 8.0, "prompt": ""}
+}
+```
+
+`device_ip` 留空即可: 只有路由器的客户端隔离挡住广播时才需要填。`llm` 整段可以省略
+(缺省即关闭); `api_key` 留空是正常状态(key 在密钥环里); `prompt` 留空用内置提示词,
+自定义时用 `%s` 标记转写文本该插入的位置。转发器每次说话都重新读这个文件,
+**改配置不需要重启服务**。
+
+转发器还会写 `~/.local/state/ai-passport-voice/status.json`: `link`
+(`linked` / `waiting`)、最近上屏文字、最后一次错误。栏插件读它而不是解析 journal;
+删掉会自行重建。
+
+**排错(Linux)**
+
+| 现象 | 查什么 |
+| --- | --- |
+| 日志停在 `等待设备`, 设备屏显 `等待电脑连接` | 设备没进语音应用、不在同一局域网、AP 隔离开了 —— 对照 `ip addr` 看设备 Wi-Fi IP |
+| 设备屏显 `麦克风未就绪` | 链路通了但 `pc.status` 没送达: 服务在跑吗? 日志有 `PC 就绪状态已发送` 吗? `wtype` 在 PATH 吗? |
+| `UDP 33333 BUSY` / 脚本报端口占用 | 旧实例(终端或服务)还在跑 —— 关掉再启 |
+| `[asr] 识别失败` | `voxtype config get engine` 是 sensevoice 吗? `~/.local/share/voxtype/models/sensevoice-small/` 存在吗? |
+| 文字进了错误的窗口 | `wtype` 键入焦点窗口 —— 先点对输入框 |
+| 短按冒出单个怪字 | SenseVoice 对静音的幻觉; 短按过滤 + VAD 正常会吃掉 —— 检查 voxtype 侧 VAD 是否开了 |
+| 日志 `[llm] 整理失败, 使用原文` | 原文仍会上屏。`voice_tui.py test "一句话"` 看原因: 401/403、模型名不对、端点不通 |
+| 整理后少了内容或答非所问 | 换更听话的模型(本机 qwen2.5、deepseek-chat 都比小模型稳), 或换自定义提示词 |
+| 面板提示 key 是明文 | 没装 `secret-tool`(libsecret)或存过旧格式 —— 装好后重新输入一次 key |
+| 服务在密钥环里读不到 key | systemd user 单元需要会话总线: `systemctl --user show-environment` 应有 `DBUS`; 登录后先解锁一次密钥环 |
+
+**测试**
+
+```bash
+python3 -m unittest discover -s linux/tests -p "test_*.py" -v
+```
+
+58 个测试, 只用标准库 `unittest`: 伪造转写器、伪造 voxtype 二进制、伪造密钥环,
+LLM 端点只打本机 loopback 桩服务。不碰真实硬件、不出网。改 `linux/` 后必跑。
+
+本目录的文件地图与 UDP/ADPCM 约定: [linux/README.md](linux/README.md)。
 
 ## 二、连接设备
 
@@ -127,14 +223,39 @@ omarchy-shell manchunx7.ai-passport-voice probe    # 打印状态 JSON
 
 ## LLM 整理(可选, Linux)
 
-默认关闭。打开后识别原文先交给一个 OpenAI 兼容模型: 去掉「嗯/呃/那个」、口吃和重复词, 补标点分句, 保留原意和语言。任何失败(超时、key 错、端点不通)都键入识别原文 —— 丢掉用户说的话是唯一不可接受的失败。
+默认关闭; 没选 provider 时这段完全不存在, 服务不会因为 LLM 未配置而多花一次网络请求。
+打开后, 识别原文先交给一个 OpenAI 兼容模型: 去掉「嗯/呃/那个」、口吃和重复词,
+补标点分句, 保留原意、语气和语言。两条规则写在代码里, 不交给模型自觉:
+
+- **失败一律回退原文。** 端点挂了、key 错了、超时(默认 8 秒), 都键入识别原文,
+  只多打一行警告。丢掉用户说的话是唯一不可接受的失败。
+- **转写是数据不是指令。** 提示词写明转写内容只做整理, 不回答、不执行; 输出长度
+  超过输入两倍就当成「模型在回答」丢弃, 用原文。
 
 ```bash
-python3 linux/voice_tui.py          # 菜单: provider / 模型 / key / 开关 / 测试
+python3 linux/voice_tui.py                          # 交互菜单: provider / 模型 / key / 开关 / 测试
+python3 linux/voice_tui.py status [--json]          # 服务、设备、整理状态
+python3 linux/voice_tui.py models                   # 对端点 GET /models
 python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 只看整理效果, 不上屏
+python3 linux/voice_tui.py prompt --edit            # 覆盖内置提示词
+python3 linux/voice_tui.py set --provider openai --enable
 ```
 
-provider: `ollama`、`lmstudio`、`llamacpp`(本机, 免 key)、`openai`、`openrouter`、`deepseek`(需 key)、`custom`(任意 OpenAI 兼容 base URL)。改配置无需重启服务。
+provider: `ollama` / `lmstudio` / `llamacpp`(本机, 免 key)、`openai` / `openrouter` /
+`deepseek`(https, 需 key)、`custom`(任意 OpenAI 兼容 `base_url`, 面板里多一个 URL
+输入框)。模型列表由端点 `GET /models` 现取, 在面板里是可搜索下拉: OpenRouter 有
+300 个模型, 输入片段即可过滤。
+
+**API key 存在哪**: 登录密钥环(`secret-tool` → gnome-keyring / kwallet, 静态加密),
+配置里的 `llm.api_key` 保持为空。读取顺序: `AIPV_API_KEY` → 配置文件(旧配置兼容)
+→ 密钥环。没有 libsecret 时回退到 0600 的配置文件, 面板会把这一行标红, 重新输入
+一次即移入密钥环。key 按 provider 分别保存, `voice_tui.py set --clear-key` 清掉
+当前 provider 的条目; key 通过 stdin 传递, 不出现在 `ps`。
+
+输出跟随系统 locale —— 中文、日本語、Español, 其它走 English; `--lang en|es|ja|zh`
+可强制。栏插件调用时带 `--lang`, 所以它面板里回显的保存/错误信息与面板语言一致。
+
+改这份配置**不需要重启服务**: 转发器每次说话都重新读 `voice-config.json`。
 
 ## 仓库内容
 
@@ -152,7 +273,7 @@ provider: `ollama`、`lmstudio`、`llamacpp`(本机, 免 key)、`openai`、`open
 ## 文档
 
 - [详细使用教程](docs/QUICKSTART.zh-CN.md)
-- [Linux 转发器](linux/README.md) · [Omarchy 栏插件](omarchy/README.md)
+- [linux/ 目录说明](linux/README.md) · [Omarchy 栏插件](omarchy/README.md)
 - [常见故障排查](docs/TROUBLESHOOTING.zh-CN.md)
 - [官网固件与刷写注意](docs/FIRMWARE.zh-CN.md)
 - [源码运行与测试](docs/DEVELOPMENT.zh-CN.md)
