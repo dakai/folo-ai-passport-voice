@@ -260,13 +260,13 @@ Not included: home screen/business card, radio, assistant, games, stopwatch, ful
 <a id="codex-setup"></a>
 ## Let a local agent configure it
 
-Open your local agent in the extracted app folder and paste this (the prompt is in Chinese, as the referenced docs are):
+Open your local agent in the extracted app folder and paste this:
 
 ```text
-先阅读 README.md 和 docs/QUICKSTART.zh-CN.md。只帮助我配置随身语音电脑端，不要重建或公开整机源码。固件从官网玩法页获取，不要把 Source code ZIP 当固件。
-先运行 windows/AI-Passport-Voice.exe --diagnose，核对 VB-CABLE 两端、UDP 33333 和快捷键。已有配置先备份；我的输入法开始/结束快捷键和 hold/tap 模式需要按真实设置核对。
-修改默认麦克风、安装驱动或开放防火墙前说明影响。不要关闭整套防火墙，也不要把系统声音输出改成 CABLE Input。
-最后让我在记事本亲自说话，确认松开结束、文字出现、下键换行。未实际验证的环节明确说明，不自动把环境声音发到云端。
+First read README.md and docs/QUICKSTART.zh-CN.md (that guide is in Chinese). Help me configure only the computer side of 随身语音 — do not rebuild or publish the whole device source. Get the firmware from the official play page; never treat the Source code ZIP as firmware.
+Run windows/AI-Passport-Voice.exe --diagnose first and check both ends of VB-CABLE, UDP 33333 and the hotkey. Back up any existing config. My input method's start/stop shortcut and its hold/tap mode have to be checked against my real settings.
+Explain the impact before changing the default microphone, installing a driver or opening the firewall. Do not turn the firewall off, and do not set CABLE Input as the system playback device.
+Finally let me speak into Notepad myself and confirm that releasing the top button ends recognition, the text appears, and a short press on the bottom button sends a newline. State clearly which parts were not actually verified, and never send ambient audio to the cloud on your own.
 ```
 
-See [docs/CODEX_SETUP.zh-CN.md](docs/CODEX_SETUP.zh-CN.md). Keep personal config, recordings and input-method accounts out of GitHub. This project provides no recognition account or ASR service and cannot promise compatibility with every input-method version.
+See [docs/CODEX_SETUP.zh-CN.md](docs/CODEX_SETUP.zh-CN.md) (Chinese). Keep personal config, recordings and input-method accounts out of GitHub. This project provides no recognition account or ASR service and cannot promise compatibility with every input-method version.

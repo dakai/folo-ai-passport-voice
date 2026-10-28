@@ -257,4 +257,16 @@ No incluido: pantalla de inicio/tarjeta, radio, asistente, juegos, cronómetro, 
 - [Registro de validación y límites](docs/VALIDATION.md)
 - [Avisos de terceros](THIRD_PARTY_NOTICES.md)
 
-Este proyecto no ofrece cuenta de reconocimiento ni servicio ASR, y no garantiza compatibilidad con todas las versiones de los métodos de entrada. Mantén fuera de GitHub la configuración personal, las grabaciones y las cuentas del método de entrada.
+<a id="codex-setup"></a>
+## Deja que un agente local lo configure
+
+Abre tu agente local en la carpeta descomprimida de la aplicación y pega esto:
+
+```text
+Primero lee README.md y docs/QUICKSTART.zh-CN.md (esa guía está en chino). Ayúdame a configurar solo el lado del ordenador de 随身语音: no reconstruyas ni publiques el código completo del dispositivo. El firmware se obtiene de la página oficial de juegos; nunca trates el Source code ZIP como firmware.
+Ejecuta primero windows/AI-Passport-Voice.exe --diagnose y revisa los dos extremos de VB-CABLE, el UDP 33333 y el atajo. Haz copia de la configuración existente. El atajo de inicio/fin de mi método de entrada y su modo hold/tap hay que comprobarlos contra mi configuración real.
+Explica el impacto antes de cambiar el micrófono predeterminado, instalar un controlador o abrir el firewall. No desactives el firewall entero y no pongas CABLE Input como dispositivo de reproducción del sistema.
+Al final déjame hablar yo en el Bloc de notas y confirma que soltar el botón superior termina el reconocimiento, que aparece el texto y que una pulsación corta del botón inferior envía un salto de línea. Di claramente qué partes no se verificaron de verdad, y nunca envíes audio del ambiente a la nube por tu cuenta.
+```
+
+Ver [docs/CODEX_SETUP.zh-CN.md](docs/CODEX_SETUP.zh-CN.md) (en chino). Mantén fuera de GitHub la configuración personal, las grabaciones y las cuentas del método de entrada. El proyecto no ofrece cuenta de reconocimiento ni servicio ASR y no garantiza compatibilidad con todas las versiones de los métodos de entrada.
