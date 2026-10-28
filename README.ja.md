@@ -25,7 +25,7 @@ AI Passport の上ボタンを押したまま話し、離すと、入力中の�
 | | 言語 |
 | --- | --- |
 | ドキュメント | English · 中文 · 日本語 |
-| インターフェース(バーパネルと `voice_tui.py`) | English · 中文 · 日本語 · Español — `language` 設定または `--lang`、デスクトップの locale に従う。文言のみ |
+| インターフェース(バーパネルと `voice_tui.py`) | English · 中文 · 日本語 — `language` 設定または `--lang`、デスクトップの locale に従う。文言のみ |
 | 標準エンジン(SenseVoice)での認識 | 中文 · English · 日本語 · 한국어 · 粤语 |
 | 別エンジンでの認識 | そのエンジンのモデル次第 — 例: whisper の多言語モデル(`base`、`small`、`large-v3`)と `whisper.language es` でスペイン語 |
 | LLM 整形 | 任意の言語: 認識結果を整えるだけで、翻訳はしません |
@@ -219,7 +219,9 @@ curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/o
 
 クリックでパネルが開きます。サービスとリンクの状態、最後に認識した文字、最後のエラー、起動/再起動、そしてサービスが止まっているときは直すための 2 つのコマンドを表示します。その下に LLM 整形のスイッチ、プロバイダー、検索できるモデル選択、API キー欄があります。キーはログインキーリング(`secret-tool`)に保存され、平文ファイルには残りません。ファイルへのフォールバックしかない場合はパネルにその旨が出ます。
 
-ウィジェット自身は設定を持ちません。読み書きはすべて `linux/voice_tui.py` を経由し、ターミナルのメニューと同じプログラムなので両者が食い違うことはありません。独自のキーは `language`(`auto`、`en`、`es`、`ja`、`zh`)と `repoPath` だけです。
+<img src="docs/images/omarchy-panel.webp" alt="パネル: サービスの状態、最後に認識した文字、LLM 整形の設定" width="360">
+
+ウィジェット自身は設定を持ちません。読み書きはすべて `linux/voice_tui.py` を経由し、ターミナルのメニューと同じプログラムなので両者が食い違うことはありません。独自のキーは `language`(`auto`、`en`、`ja`、`zh`)と `repoPath` だけです。
 `auto` はデスクトップの locale に従います。
 
 ```bash
@@ -240,7 +242,7 @@ omarchy-shell manchunx7.ai-passport-voice probe    # 状態 JSON を表示
 python3 linux/voice_tui.py                          # メニュー: プロバイダー / モデル / キー / オンオフ / テスト
 python3 linux/voice_tui.py status [--json]          # サービス、リンク、整形の状態
 python3 linux/voice_tui.py models                   # エンドポイントの GET /models
-python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 整形結果だけ、入力はしない
+python3 linux/voice_tui.py test "えーと あの 明日 発送します まあ"   # 整形結果だけ、入力はしない
 python3 linux/voice_tui.py prompt --edit            # 内蔵プロンプトを置き換え
 python3 linux/voice_tui.py set --provider openai --enable
 ```
@@ -249,7 +251,7 @@ python3 linux/voice_tui.py set --provider openai --enable
 
 **API キーの保存先**: ログインキーリング (`secret-tool` → gnome-keyring または kwallet、保存時に暗号化) なので、設定の `llm.api_key` は空のままです。解決順は `AIPV_API_KEY`、設定ファイル(古い構成)、キーリング。libsecret が無い場合は権限 0600 の設定ファイルに退避し、パネルは一度入力し直すまで赤で表示します。キーは provider ごとに保存され、`voice_tui.py set --clear-key` で現在の項目を削除できます。キーは stdin で渡すので `ps` には出ません。
 
-出力はデスクトップの locale に従います — 中国語、日本語、スペイン語、それ以外は英語 — で、`--lang en|es|ja|zh` で強制できます。ウィジェットは自分の言語を渡すので、パネルに表示される保存/エラーの行もパネルと同じ言語になります。
+出力はデスクトップの locale に従います — 中国語、日本語、それ以外は英語 — で、`--lang en|ja|zh` で強制できます。ウィジェットは自分の言語を渡すので、パネルに表示される保存/エラーの行もパネルと同じ言語になります。
 
 この設定の変更にサービスの再起動は不要です。
 

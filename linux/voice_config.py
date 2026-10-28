@@ -249,7 +249,7 @@ def store_api_key(cfg, key):
 # Languages with a full string table. Adding one means adding a table to
 # voice_tui.TEXT, llm_cleanup.TEXT/MESSAGES and omarchy/I18n.js STRINGS;
 # `language` in the widget settings takes "auto" plus these codes.
-LANGUAGES = ("en", "es", "ja", "zh")
+LANGUAGES = ("en", "ja", "zh")
 
 
 # Pinned by the configurator when --lang or the widget forces a language, so

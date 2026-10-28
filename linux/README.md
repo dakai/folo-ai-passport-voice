@@ -17,7 +17,7 @@
 | `adpcm.py` | IMA ADPCM 解码, 与设备端 `device/main/apps/voice/adpcm.c` 逐字节一致 |
 | `asr_voxtype.py` | `voxtype transcribe` 包装: 写 WAV、解析首个空行之后的文本 |
 | `inject.py` | `wtype` 键入文字、回车、清行; `--dry-run` 不启动子进程 |
-| `llm_cleanup.py` | OpenAI 兼容整理: provider 目录、`PROMPT`、失败回退、4 语言消息 |
+| `llm_cleanup.py` | OpenAI 兼容整理: provider 目录、`PROMPT`、失败回退、3 语言消息 |
 | `voice_config.py` | `voice-config.json`、`status.json`、API key、`resolve_lang` 的唯一读写与判定处 |
 | `voice_tui.py` | 终端配置器; 同时是栏插件调用的 `status` / `set` / `models` / `test` 后端 |
 | `install.sh` | 装 systemd user 单元(幂等, 可重复运行) |

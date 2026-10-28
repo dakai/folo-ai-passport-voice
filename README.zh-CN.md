@@ -25,7 +25,7 @@
 | | 语言 |
 | --- | --- |
 | 文档 | English · 中文 · 日本語 |
-| 界面（栏面板与 `voice_tui.py`） | English · 中文 · 日本語 · Español —— `language` 设置或 `--lang`，跟随系统 locale；只有文案 |
+| 界面（栏面板与 `voice_tui.py`） | English · 中文 · 日本語 —— `language` 设置或 `--lang`，跟随系统 locale；只有文案 |
 | 开箱识别（SenseVoice） | 中文 · English · 日本語 · 한국어 · 粤语 |
 | 换引擎后的识别 | 由那个引擎的模型决定 —— 例如 whisper 多语言模型（`base`、`small`、`large-v3`）加 `whisper.language es` 做西语 |
 | LLM 整理 | 任意语言：它只重排识别结果，从不翻译 |
@@ -238,7 +238,9 @@ curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/o
 
 点开面板: 服务与设备状态、最近一条上屏文字、最近一次错误、启动/重启; 服务没跑时直接列出两条修复命令。再往下是整理开关、provider、可搜索的模型下拉、API key 输入框。key 存进登录密钥环(`secret-tool`), 不落明文文件; 只能回退到文件时面板会写明。
 
-插件自身不存设置: 所有读写都调用 `linux/voice_tui.py` —— 与终端菜单是同一个程序, 所以两边永远一致。它自己的键只有 `language`(`auto` / `en` / `es` / `ja` / `zh`)和 `repoPath` ——
+<img src="docs/images/omarchy-panel.webp" alt="面板: 服务状态、最近一条上屏文字与 LLM 整理设置" width="360">
+
+插件自身不存设置: 所有读写都调用 `linux/voice_tui.py` —— 与终端菜单是同一个程序, 所以两边永远一致。它自己的键只有 `language`(`auto` / `en` / `ja` / `zh`)和 `repoPath` ——
 `auto` 跟随桌面 locale:
 
 ```bash
@@ -263,7 +265,7 @@ omarchy-shell manchunx7.ai-passport-voice probe    # 打印状态 JSON
 python3 linux/voice_tui.py                          # 交互菜单: provider / 模型 / key / 开关 / 测试
 python3 linux/voice_tui.py status [--json]          # 服务、设备、整理状态
 python3 linux/voice_tui.py models                   # 对端点 GET /models
-python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # 只看整理效果, 不上屏
+python3 linux/voice_tui.py test "呃 那个 就是 明天发货 嗯"   # 只看整理效果, 不上屏
 python3 linux/voice_tui.py prompt --edit            # 覆盖内置提示词
 python3 linux/voice_tui.py set --provider openai --enable
 ```
@@ -279,7 +281,7 @@ provider: `ollama` / `lmstudio` / `llamacpp`(本机, 免 key)、`openai` / `open
 一次即移入密钥环。key 按 provider 分别保存, `voice_tui.py set --clear-key` 清掉
 当前 provider 的条目; key 通过 stdin 传递, 不出现在 `ps`。
 
-输出跟随系统 locale —— 中文、日本語、Español, 其它走 English; `--lang en|es|ja|zh`
+输出跟随系统 locale —— 中文、日本語, 其它走 English; `--lang en|ja|zh`
 可强制。栏插件调用时带 `--lang`, 所以它面板里回显的保存/错误信息与面板语言一致。
 
 改这份配置**不需要重启服务**: 转发器每次说话都重新读 `voice-config.json`。

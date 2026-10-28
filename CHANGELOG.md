@@ -34,11 +34,14 @@
   (日文已实测), 西语需换 whisper 等多语言引擎 —— 界面语言与识别语言是两件事。
 - Omarchy 插件安装改为一条命令: `curl … /omarchy/install.sh | bash`(raw.githubusercontent),
   不必先克隆仓库; 脚本可在任意位置运行(只取 `omarchy/`), 校验后才启用, 重复运行等于更新。
-- 界面语言新增 **西班牙语** 与 **日语**: 终端配置器、LLM 整理的消息、Omarchy 面板
-  都跟随 locale (zh / ja / es, 其它回退英文), `--lang` 与面板 `language`
-  可强制; 四种语言的字符串表由测试保证 key 一致。
+- 界面语言去掉西班牙语, 只留 **English / 中文 / 日本語**(`en` / `ja` / `zh` +
+  `auto`): 识别本来就没有西语, 四套字符串表维护不起。旧配置里残留的
+  `language: es` 或 `--lang es` 会被忽略并回退到系统 locale, 不会半截加载。
+- 界面语言新增 **日语**: 终端配置器、LLM 整理的消息、Omarchy 面板
+  都跟随 locale (zh / ja, 其它回退英文), `--lang` 与面板 `language`
+  可强制; 三种语言的字符串表由测试保证 key 一致。
 - Linux 的安装、配置、排错与测试说明从 `linux/README.md` 并入根 README
-  (四种语言同步); `linux/README.md` 只留目录本身: 文件职责、报文约定、约束。
+  (三种语言同步); `linux/README.md` 只留目录本身: 文件职责、报文约定、约束。
 - README 改为以「安装 + 连接设备 + Omarchy 插件」为主线, 并新增
   `README.zh-CN.md`、`README.ja.md`(三份互相链接; 西语 README 已撤)。
 - Linux 测试 17 → 54 项, 覆盖配置规范化、端点策略、失败回退、状态文件、key 存储与配置器。

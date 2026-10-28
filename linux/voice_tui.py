@@ -196,87 +196,6 @@ TEXT = {
         "modelSet": "model → {value}",
         "providerOff": "off",
     },
-    "es": {
-        "statusTitle": " AI Passport · estado del servicio de voz",
-        "statusService": " Servicio     {value}  ({unit})",
-        "statusDevice": " Dispositivo  {value}",
-        "statusCleanup": " Limpieza     {value}",
-        "statusKey": " Clave        {value}{custom}",
-        "statusLast": " Último       {value}",
-        "statusError": " Error        {value}",
-        "unknownServiceAction": "acción de servicio desconocida '{action}' (start|stop|restart)",
-        "systemctlFailed": "systemctl falló: {error}",
-        "serviceResult": "{unit}: {action} → {state}",
-        "linkLinked": "conectado",
-        "linkWaiting": "esperando el dispositivo",
-        "linkUnknown": "desconocido (¿servicio detenido?)",
-        "cleanupOff": "desactivada (solo transcripción local)",
-        "cleanupOn": "activada",
-        "cleanupOffShort": "desactivada",
-        "customPromptSuffix": " · prompt personalizado",
-        "keyWhereKeyring": "llavero de sesión",
-        "keyWhereFile": "archivo en claro (vuelve a introducirla)",
-        "keyWhereEnv": "variable de entorno",
-        "keyWhereNone": "sin configurar",
-        "saved": "guardado {path}",
-        "summary": "limpieza: {state} · provider={provider} · model={model} · key={key}",
-        "keySavedShort": "guardada",
-        "keyUnsetShort": "sin configurar",
-        "keyStoredKeyring": "guardada en el llavero de sesión",
-        "keyStoredFile": "escrita en el archivo de configuración (texto claro, falta secret-tool)",
-        "keyStoredNone": "borrada",
-        "nothingToChange": "nada que cambiar (ver --help)",
-        "unknownProvider": "provider desconocido '{provider}'; opciones: {options}",
-        "enableDisableBoth": "usa solo uno de --enable/--disable",
-        "needProviderModel": "elige provider y modelo antes de activar la limpieza",
-        "modelsFailed": "no se pudo obtener la lista de modelos: {error}",
-        "modelsEmpty": "el endpoint no devolvió modelos",
-        "testRaw": "original  {text}",
-        "testClean": "limpiado  {text}",
-        "testEmpty": "(vacío)",
-        "testFailed": "la limpieza falló: {error}",
-        "promptUnchanged": "sin cambios",
-        "promptSaved": "prompt guardado",
-        "promptReset": "se restauró el prompt integrado",
-        "menuModel": " 2) modelo              {value}",
-        "menuKey": " 3) API key             {value}",
-        "menuToggle": " 4) limpieza on/off     {value}",
-        "menuPrompt": " 5) prompt propio       {value}",
-        "menuTest": " 6) probar una frase",
-        "menuRestart": " 7) reiniciar el servicio",
-        "menuLogs": " 8) registro reciente",
-        "menuQuit": " q) salir",
-        "menuChoose": "opción",
-        "on": "activada",
-        "off": "desactivada",
-        "custom": "personalizado",
-        "builtin": "integrado",
-        "chooseNumber": "número (vacío cancela)",
-        "chooseNumberOrName": "número, o escribe el nombre del modelo (vacío cancela)",
-        "modelName": "nombre del modelo (por defecto {default})",
-        "fetchingModels": "obteniendo modelos de {url}…",
-        "fetchFailed": "error al obtener: {error}",
-        "manualModel": "también puedes escribir el nombre del modelo",
-        "needProvider": "elige primero un provider",
-        "keyIntro": "la clave va al llavero de sesión (secret-tool); sin libsecret se "
-                    "escribe en voice-config.json (permisos 600). Ninguna de las dos "
-                    "cosas está en git",
-        "keyCurrentSaved": "guardada — Intro la mantiene, escribe - para borrarla",
-        "keyCurrentNone": "sin configurar",
-        "keyPrompt": "nueva API key",
-        "keyCleared": "clave borrada",
-        "keySavedMsg": "clave guardada",
-        "toggleResult": "limpieza → {state}",
-        "promptIntro": "el prompt integrado conserva tus palabras, quita muletillas y "
-                       "añade puntuación; usa %s para la posición de la transcripción",
-        "editPromptAsk": "¿editar el prompt personalizado? (y/N)",
-        "testText": "frase de prueba",
-        "journalFailed": "journalctl falló: {error}",
-        "failed": "falló: {error}",
-        "providerSet": "provider → {value}",
-        "modelSet": "modelo → {value}",
-        "providerOff": "off",
-    },
     "ja": {
         "statusTitle": " AI Passport · 音声サービスの状態",
         "statusService": " サービス  {value}  ({unit})",
@@ -502,14 +421,16 @@ def apply_changes(cfg, args):
             raise SystemExit(tr("unknownProvider", provider=args.provider,
                                 options=", ".join([llm_cleanup.OFF]
                                                   + list(llm_cleanup.PROVIDERS))))
+        previous = llm["provider"]
         llm["provider"] = args.provider
-        # Switching provider invalidates a model name from another vendor;
-        # falling back to that provider's default keeps the pair consistent.
-        if args.provider != llm_cleanup.OFF and not args.model:
-            llm["model"] = llm_cleanup.PROVIDERS[args.provider][1]
         if args.provider == llm_cleanup.OFF:
             llm["model"] = ""
             llm["base_url"] = ""
+        elif not args.model and llm["model"] in ("", default_model(previous)):
+            # Only the previous vendor's default is a wrong name here. A typed
+            # model — and `custom`, whose default is empty — survives the
+            # switch, so picking a provider never has to carry a model with it.
+            llm["model"] = llm_cleanup.PROVIDERS[args.provider][1]
         changed.append("provider")
     if args.model is not None:
         llm["model"] = args.model.strip()
@@ -545,10 +466,11 @@ def apply_changes(cfg, args):
         llm["enabled"] = False
         changed.append("enabled")
     # Checked after every flag is applied, so `--provider X --model Y --enable`
-    # in one call works while a half-configured enable is refused rather than
-    # silently doing nothing.
-    if llm["enabled"] and (llm_cleanup.provider_of(llm) == llm_cleanup.OFF
-                           or not str(llm["model"]).strip()):
+    # in one call works. Only an explicit enable is refused when half
+    # configured: choosing a custom provider is how the panel reaches the URL
+    # and model fields, and blocking that save would strand the selection.
+    if args.enable and (llm_cleanup.provider_of(llm) == llm_cleanup.OFF
+                        or not str(llm["model"]).strip()):
         raise SystemExit(tr("needProviderModel"))
     cfg["llm"] = llm
     return changed
@@ -886,7 +808,8 @@ def build_parser():
     # before the subcommand name.
     sub_common = argparse.ArgumentParser(add_help=False)
     sub_common.add_argument("--config", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
-    sub_common.add_argument("--lang", default=argparse.SUPPRESS, help=argparse.SUPPRESS)
+    sub_common.add_argument("--lang", default=argparse.SUPPRESS, help=argparse.SUPPRESS,
+                            choices=["auto"] + list(voice_config.LANGUAGES))
 
     parser = argparse.ArgumentParser(
         parents=[common],

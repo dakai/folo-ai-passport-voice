@@ -38,6 +38,7 @@ Panel {
   readonly property string lastError: String(root.status.lastError || "")
   readonly property string lastText: String(root.status.lastText || "")
   readonly property string provider: String(root.llm.provider || "off")
+  readonly property string baseUrl: String(root.llm.baseUrl || "")
   readonly property bool customProvider: root.provider === "custom"
   readonly property bool switchOn: root.llm.switchOn === true
   readonly property string keyStorage: String(root.llm.keyStorage || "none")
@@ -58,6 +59,8 @@ Panel {
   // Which provider `modelOptions` belongs to: a list fetched for OpenRouter is
   // not a list for Ollama, and showing it would offer models that cannot serve.
   property string modelsFor: ""
+  readonly property var modelChoices: root.modelsFor === root.provider
+    ? root.modelOptions : []
   // Providers whose model list already failed this session (a gateway can
   // serve /chat/completions and still 401 on /models). Retried only by ↻ or a
   // provider change, not on every panel open.
@@ -69,6 +72,19 @@ Panel {
     root.refresh()
     root.maybeFetchModels()
     root.controller.show()
+  }
+
+  // A provider or endpoint switch makes every fetched name suspect, so the
+  // list goes with it. Read here, off the status the configurator reports,
+  // because the panel cannot know which save landed before the process exits.
+  onProviderChanged: root.resetModels()
+  onBaseUrlChanged: root.resetModels()
+
+  function resetModels() {
+    root.modelOptions = []
+    root.modelsFor = ""
+    root.modelsFailedFor = ""
+    if (root.opened) root.maybeFetchModels()
   }
 
   function close() {
@@ -118,6 +134,10 @@ Panel {
     if (!force && root.modelsFailedFor === root.provider) return
     if (root.modelsFor === root.provider && root.modelOptions.length > 0) return
     if (force) root.modelsFailedFor = ""
+    // The provider is captured with the request: by the time the list lands,
+    // status may already name a different one, and its answer belongs to the
+    // provider that was asked, not the one on screen.
+    modelsProc.fetchFor = root.provider
     root.modelsFor = root.provider
     root.note = root.t("fetchingModels")
     root.run(modelsProc, ["models", "--provider", root.provider])
@@ -139,6 +159,7 @@ Panel {
       if (name.length > 0) out.push({ value: name, label: name })
     }
     root.modelOptions = out
+    root.modelsFor = modelsProc.fetchFor
     root.note = out.length > 0 ? root.t("modelsFound").replace("{count}", String(out.length))
                                : root.t("modelsNone")
   }
@@ -166,8 +187,10 @@ Panel {
     onExited: function (code) {
       if (code === 0) root.note = root.t("savedNote")
       else if (root.note === root.t("saving")) root.note = root.t("failed")
+      // No model fetch here: status has not refreshed yet, so the provider read
+      // now is the one being left behind. `onProviderChanged`/`onBaseUrlChanged`
+      // fetch once the configurator's answer is in.
       root.refresh()
-      root.maybeFetchModels()
     }
   }
 
@@ -192,12 +215,17 @@ Panel {
     onExited: function (code) {
       root.keyDraft = ""
       if (code !== 0) root.note = root.t("failed")
+      // Keys are per provider, so a saved key is the usual reason a listing
+      // that 401'd starts answering: retry it instead of waiting for ↻.
+      if (code === 0) root.resetModels()
       root.refresh()
     }
   }
 
   Process {
     id: modelsProc
+    // Provider this request was launched for; see maybeFetchModels.
+    property string fetchFor: ""
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.applyModels(text)
@@ -213,7 +241,7 @@ Panel {
       if (code === 0) return
       // A failure is remembered for this provider: the panel opens often, and
       // repeating a rejected request every time helps nobody.
-      root.modelsFailedFor = root.provider
+      root.modelsFailedFor = modelsProc.fetchFor
       if (root.modelOptions.length === 0 && root.note === "")
         root.note = root.t("failed")
     }
@@ -419,12 +447,8 @@ Panel {
         foreground: root.foreground
         fontFamily: root.fontFamily
         onChanged: function (value) {
-          // A provider switch also picks that provider's default model, so the
-          // pair can never name a model belonging to the previous vendor — and
-          // the fetched list goes with it.
-          root.modelOptions = []
-          root.modelsFor = ""
-          root.modelsFailedFor = ""
+          // The provider switch also picks that provider's default model, so
+          // the pair can never name a model belonging to the previous vendor.
           root.setConfig(["--provider", value])
         }
       }
@@ -437,8 +461,8 @@ Panel {
           width: parent.width - modelsButton.width - Style.space(6)
           label: root.t("model")
           value: String(root.llm.model || "")
-          options: root.modelOptions.length > 0
-            ? root.modelOptions
+          options: root.modelChoices.length > 0
+            ? root.modelChoices
             : (root.llm.model ? [{ value: String(root.llm.model), label: String(root.llm.model) }] : [])
           triggerLabel: root.t("modelPick")
           placeholderText: root.t("modelSearch")
@@ -460,7 +484,7 @@ Panel {
 
       Text {
         width: parent.width
-        visible: root.provider !== "off" && root.modelOptions.length === 0
+        visible: root.provider !== "off" && root.modelChoices.length === 0
                  && String(root.llm.model || "") === ""
         text: root.t("modelHint")
         color: root.dim
@@ -473,10 +497,13 @@ Panel {
         width: parent.width
         visible: root.customProvider
         placeholderText: "https://host/v1"
-        text: String(root.llm.baseUrl || "")
+        text: root.baseUrl
         foreground: root.foreground
         font.family: root.fontFamily
-        onEditingFinished: if (text !== String(root.llm.baseUrl || "")) root.setConfig(["--base-url", text])
+        // Never commit an empty endpoint: a stray blur would wipe the URL the
+        // custom provider needs before the models can be listed.
+        onEditingFinished: if (text !== "" && text !== root.baseUrl)
+                             root.setConfig(["--base-url", text])
       }
 
       TextField {

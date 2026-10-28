@@ -155,20 +155,23 @@ class StatusTest(unittest.TestCase):
 
 
 class LanguageTest(unittest.TestCase):
-    """Four UI languages, four complete tables."""
+    """Three UI languages, three complete tables."""
 
     def test_locale_resolves_to_a_shipped_table(self):
         saved = {name: os.environ.pop(name, None)
                  for name in ("LC_ALL", "LC_MESSAGES", "LANG")}
         try:
-            for locale, expected in (("es_MX.UTF-8", "es"), ("ja_JP.UTF-8", "ja"),
+            for locale, expected in (("ja_JP.UTF-8", "ja"),
                                      ("zh_CN.UTF-8", "zh"), ("en_GB.UTF-8", "en"),
                                      ("C.UTF-8", "en")):
                 os.environ["LANG"] = locale
                 self.assertEqual(voice_config.resolve_lang(), expected, locale)
             os.environ["LANG"] = "ja_JP.UTF-8"
-            self.assertEqual(voice_config.resolve_lang("es"), "es")  # explicit wins
+            self.assertEqual(voice_config.resolve_lang("zh"), "zh")  # explicit wins
             self.assertEqual(voice_config.resolve_lang("auto"), "ja")
+            # Spanish was removed: a stale `language es` setting is ignored and
+            # the desktop locale decides, rather than the panel half-loading.
+            self.assertEqual(voice_config.resolve_lang("es"), "ja")
         finally:
             for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
                 os.environ.pop(name, None)
@@ -183,15 +186,15 @@ class LanguageTest(unittest.TestCase):
                 self.assertIn(code, llm_cleanup.MESSAGES[status], status)
 
     def test_a_forced_language_reaches_the_cleanup_messages(self):
-        # Regression: `status --lang es` localised the template but llm_cleanup
-        # still read the shell locale, so a Spanish panel showed an English 401.
-        saved = voice_tui.set_lang("es")
+        # Regression: `status --lang ja` localised the template but llm_cleanup
+        # still read the shell locale, so a Japanese panel showed an English 401.
+        saved = voice_tui.set_lang("ja")
         try:
-            self.assertEqual(llm_cleanup.tr("noModel"), "no hay modelo seleccionado")
+            self.assertEqual(llm_cleanup.tr("noModel"), "モデルが選択されていません")
             with self.assertRaises(llm_cleanup.CleanupError) as caught:
-                llm_cleanup.clean("hola", {"enabled": True, "provider": "custom",
-                                           "model": ""})
-            self.assertEqual(str(caught.exception), "no hay modelo seleccionado")
+                llm_cleanup.clean("こんにちは", {"enabled": True, "provider": "custom",
+                                               "model": ""})
+            self.assertEqual(str(caught.exception), "モデルが選択されていません")
         finally:
             voice_tui.set_lang(saved)
             voice_config.set_lang_override(None)
@@ -199,7 +202,7 @@ class LanguageTest(unittest.TestCase):
     def test_provider_labels_are_localised_but_brands_are_not(self):
         self.assertNotEqual(llm_cleanup.label_for("custom", "ja"),
                             llm_cleanup.label_for("custom", "en"))
-        self.assertEqual(llm_cleanup.label_for("openai", "es"), "OpenAI")
+        self.assertEqual(llm_cleanup.label_for("openai", "ja"), "OpenAI")
 
 
 class EndpointPolicyTest(unittest.TestCase):
@@ -456,6 +459,24 @@ class ConfiguratorTest(unittest.TestCase):
     def test_set_rejects_an_unknown_provider(self):
         with self.assertRaises(SystemExit):
             voice_tui.main(["set", "--config", self.path, "--provider", "nope"])
+
+    def test_set_provider_custom_keeps_the_selection_while_enabled(self):
+        # Regression: the enable-without-model guard refused `--provider custom`
+        # on a config that already had cleanup on, so the panel never switched
+        # and its URL field — visible only for custom — stayed hidden.
+        voice_config.save({"llm": {"provider": "openai", "model": "my-gateway-model",
+                                   "enabled": True}}, self.path)
+        self.assertEqual(voice_tui.main(["set", "--config", self.path,
+                                         "--provider", "custom"]), 0)
+        cfg = voice_config.load(self.path)
+        self.assertEqual(cfg["llm"]["provider"], "custom")
+        # A typed model is not the old vendor's default, so it stays.
+        self.assertEqual(cfg["llm"]["model"], "my-gateway-model")
+
+    def test_set_enable_still_requires_a_model(self):
+        with self.assertRaises(SystemExit):
+            voice_tui.main(["set", "--config", self.path,
+                            "--provider", "custom", "--enable"])
 
     def test_status_json_never_carries_the_key(self):
         voice_config.save({"llm": {"provider": "openai", "model": "gpt-4o-mini",

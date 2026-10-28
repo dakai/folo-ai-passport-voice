@@ -25,7 +25,7 @@ Four different things get translated or recognised; they are not the same set.
 | | Languages |
 | --- | --- |
 | Documentation | English · 中文 · 日本語 |
-| Interface (bar panel and `voice_tui.py`) | English · 中文 · 日本語 · Español — `language` setting or `--lang`, follows the desktop locale; labels only |
+| Interface (bar panel and `voice_tui.py`) | English · 中文 · 日本語 — `language` setting or `--lang`, follows the desktop locale; labels only |
 | Recognition out of the box (SenseVoice) | 中文 · English · 日本語 · 한국어 · 粤语 |
 | Recognition with another engine | whatever that engine's model covers — e.g. whisper multilingual (`base`, `small`, `large-v3`) plus `whisper.language es` for Spanish |
 | Transcript cleanup (LLM) | any language: it reformats what the recogniser produced, it never translates |
@@ -216,7 +216,9 @@ The icon carries three states:
 
 Click it for the panel: service and link state, the last recognised text, the last error, start/restart, and — when the service is down — the two commands that fix it. Below that: the LLM cleanup switch, provider and searchable model picker, and the API key field. Keys go to the login keyring (`secret-tool`), never to a plain file; the panel says so when only the file fallback is available.
 
-The widget stores no settings of its own: every read and write goes through `linux/voice_tui.py`, the same program as the terminal menu, so the two can never disagree. Its only own keys are `language` (`auto`, `en`, `es`, `ja`, `zh`) and `repoPath` —
+<img src="docs/images/omarchy-panel.webp" alt="The panel: service state, last recognised text, and the LLM cleanup settings" width="360">
+
+The widget stores no settings of its own: every read and write goes through `linux/voice_tui.py`, the same program as the terminal menu, so the two can never disagree. Its only own keys are `language` (`auto`, `en`, `ja`, `zh`) and `repoPath` —
 `auto` follows the desktop locale:
 
 ```bash
@@ -237,7 +239,7 @@ Off by default, and absent altogether when no provider is chosen — the service
 python3 linux/voice_tui.py                          # menu: provider, model, key, on/off, test
 python3 linux/voice_tui.py status [--json]          # service, link, cleanup state
 python3 linux/voice_tui.py models                   # GET /models on the endpoint
-python3 linux/voice_tui.py test "呃 那个 the the 明天发货"   # cleanup only, nothing is typed
+python3 linux/voice_tui.py test "um so the the we ship it tomorrow"   # cleanup only, nothing is typed
 python3 linux/voice_tui.py prompt --edit            # replace the built-in prompt
 python3 linux/voice_tui.py set --provider openai --enable
 ```
@@ -246,7 +248,7 @@ Providers: `ollama`, `lmstudio`, `llamacpp` (local, no key), `openai`, `openrout
 
 **Where the API key lives**: the login keyring (`secret-tool` → gnome-keyring or kwallet, encrypted at rest), so `llm.api_key` in the config stays empty. Resolution order is `AIPV_API_KEY`, then the config file (old installs), then the keyring. Without libsecret the key falls back to the 0600 config file and the panel says so in red until you re-enter it once. Keys are stored per provider, `voice_tui.py set --clear-key` removes the current one, and the key is passed over stdin so it never appears in `ps`.
 
-Output follows the desktop locale — Chinese, Japanese, Spanish, otherwise English — and `--lang en|es|ja|zh` forces it. The widget passes its own language along, so the save/error lines it echoes back are in the panel's language.
+Output follows the desktop locale — Chinese, Japanese, otherwise English — and `--lang en|ja|zh` forces it. The widget passes its own language along, so the save/error lines it echoes back are in the panel's language.
 
 Changing this config needs no service restart.
 
