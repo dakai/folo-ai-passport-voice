@@ -41,31 +41,7 @@ foreground/accent/urgent/muted, 所以插件自己读这一个值; 读不到回�
 
 ## 安装
 
-一条命令, 不需要先克隆仓库:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
-```
-
-脚本按顺序做: 克隆(只取 `omarchy/` 那一份)或直接用当前仓库 → 覆盖到
-`~/.config/omarchy/plugins/manchunx7.ai-passport-voice/` → 校验 → 让 shell 重新扫描
-→ 未启用时 `omarchy plugin enable … --section right`。重复运行等于更新,
-不会改变栏上位置。
-
-已在仓库里就 `bash omarchy/install.sh`; 仓库不在默认路径时它会顺手把
-`repoPath` 写进插件设置, 插件才知道 `linux/voice_tui.py` 在哪。
-
-为什么不用 `omarchy plugin add <url>` 指向本仓库: 那个命令把**仓库根目录**当插件校验,
-而这里的根是整个项目、插件在 `omarchy/` 子目录。想指向 fork 或分支:
-`AIPV_REPO_URL=… AIPV_REF=… bash omarchy/install.sh`。
-
-栏上没出现就 `omarchy restart shell`(热重载不会重建已有的栏组件)。
-
-### 从插件市场安装
-
-本插件也在 Omarchy 社区市场列出。市场只接受「仓库根目录就是插件」的形式, 所以
-[dakai/omarchy-ai-passport-voice](https://github.com/dakai/omarchy-ai-passport-voice)
-是 `omarchy/` 这一份的**只读镜像** —— 别在那里改代码, 改动一律落在本仓库, 再推上去。
+插件市场里一条命令 (推荐):
 
 ```bash
 omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable
@@ -76,7 +52,30 @@ omarchy plugin remove manchunx7.ai-passport-voice     # 卸载
 (根 README 的 Linux 一节), 并让 `repoPath` 指向那份 checkout。缺了它面板会提示
 「未找到转发器仓库」。卸载插件不动 `voice-config.json`、密钥环和转发器服务。
 
-同步镜像 (在应用仓库根目录执行, `omarchy/` 有改动就推一次):
+### 从应用仓库装
+
+插件本体在 `omarchy/`, 安装脚本在 `tools/` (脚本不随插件发布: 市场用
+`omarchy plugin add`, 插件仓库不该带能改环境的安装器)。克隆本仓库后:
+
+```bash
+bash tools/install-omarchy-plugin.sh
+```
+
+脚本只做本地动作: 把 `omarchy/` 覆盖到
+`~/.config/omarchy/plugins/manchunx7.ai-passport-voice/` → 校验 → 让 shell 重新扫描
+→ 未启用时 `omarchy plugin enable … --section right`。重复运行等于更新,
+不会改变栏上位置。仓库不在默认路径时它会顺手把 `repoPath` 写进插件设置,
+插件才知道 `linux/voice_tui.py` 在哪。
+
+为什么不能 `omarchy plugin add <本仓库>`: 那个命令把**仓库根目录**当插件校验,
+而这里的根是整个项目、插件在 `omarchy/` 子目录 —— 市场用上面那个镜像仓库。
+
+栏上没出现就 `omarchy restart shell`(热重载不会重建已有的栏组件)。
+
+### 镜像
+
+[dakai/omarchy-ai-passport-voice](https://github.com/dakai/omarchy-ai-passport-voice)
+是 `omarchy/` 这一份的**只读镜像** —— 别在那里改代码, 改动一律落在本仓库, 再推上去:
 
 ```bash
 git subtree push --prefix omarchy https://github.com/dakai/omarchy-ai-passport-voice.git main

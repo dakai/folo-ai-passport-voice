@@ -219,12 +219,14 @@ LLM 端点只打本机 loopback 桩服务。不碰真实硬件、不出网。改
 栏上一个图标显示转发器状态, 点开是面板, 顺手配 LLM 整理:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
+bash tools/install-omarchy-plugin.sh
 ```
 
-只取插件那份、校验、放进栏右区。已在仓库里就 `bash omarchy/install.sh`; 重复运行等于更新,
-不改栏上位置。不能用 `omarchy plugin add <仓库>`: 它把仓库根目录当插件校验, 而这里插件在
-`omarchy/` 子目录。
+把 `omarchy/` 覆盖到 `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, 校验、
+让 shell 重新扫描, 放进栏右区; 重复运行等于更新, 不改栏上位置。没有「下载即执行」
+的路径 —— 在转发器本来就要用的那份 clone 里跑。不能用 `omarchy plugin add <仓库>`:
+它把仓库根目录当插件校验, 而这里插件在 `omarchy/` 子目录。想从市场装:
+`omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable`。
 
 图标没出现就 `omarchy restart shell`(热重载不会重建栏组件)。
 

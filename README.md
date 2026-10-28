@@ -199,10 +199,10 @@ A passing computer-side diagnosis does not prove the input method recognises rea
 A bar icon for the forwarder, plus a panel that configures the LLM cleanup:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
+bash tools/install-omarchy-plugin.sh
 ```
 
-That fetches only the plugin, validates it, and puts it in the bar's right section. From a checkout: `bash omarchy/install.sh`. Re-running updates in place and keeps the bar placement. `omarchy plugin add <repo>` cannot do this — it validates the repository root as the plugin, and the plugin lives in `omarchy/`.
+That copies `omarchy/` into `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, validates it, rescans the shell and puts it in the bar's right section. Re-running updates in place and keeps the bar placement. There is no download-and-execute path: run it from the clone the forwarder already needs. `omarchy plugin add <repo>` cannot do this — it validates the repository root as the plugin, and the plugin lives in `omarchy/`. To install from the marketplace listing instead: `omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable`.
 
 If the icon does not appear: `omarchy restart shell` (hot reload does not rebuild the bar).
 

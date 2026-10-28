@@ -202,10 +202,10 @@ python3 -m unittest discover -s linux/tests -p "test_*.py" -v
 バーにフォワーダーのアイコンを出し、パネルから LLM 整形を設定できます。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/dakai/folo-ai-passport-voice/main/omarchy/install.sh | bash
+bash tools/install-omarchy-plugin.sh
 ```
 
-プラグインだけを取得し、検証してバーの右側に置きます。リポジトリ内なら `bash omarchy/install.sh`。再実行は更新になり、バー上の位置は変わりません。`omarchy plugin add <repo>` は使えません — リポジトリのルートをプラグインとして検証するためで、ここではプラグインは `omarchy/` にあります。
+`omarchy/` を `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/` にコピーし、検証してシェルに再スキャンさせ、バーの右側へ置きます。再実行は更新になり、バー上の位置は変わりません。ダウンロードしたものをそのまま実行する経路はありません — フォワーダーが必要とする clone の中で実行します。`omarchy plugin add <repo>` は使えません — リポジトリのルートをプラグインとして検証するためで、ここではプラグインは `omarchy/` にあります。マーケットプレイスから入れるなら `omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable`。
 
 アイコンが出ないときは `omarchy restart shell`(ホットリロードではバーは作り直されません)。
 

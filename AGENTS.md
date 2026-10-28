@@ -99,7 +99,7 @@ python3 linux/voice_tui.py test "呃 那个 the the 明天发货"  # cleanup onl
 Install the Omarchy widget (copies `omarchy/` into the plugins dir and enables it):
 
 ```bash
-bash omarchy/install.sh
+bash tools/install-omarchy-plugin.sh
 ```
 
 Run device host tests from the repo root on Linux, WSL, or any host with Bash and a C compiler:

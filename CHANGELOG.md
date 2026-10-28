@@ -36,8 +36,10 @@
   之前只列了中英; 识别语言本身仍由 ASR 引擎决定。
 - README 的 Linux 一节写清「能听懂什么」: SenseVoice 覆盖中文、英文、日文、韩文、粤语
   (日文已实测), 西语需换 whisper 等多语言引擎 —— 界面语言与识别语言是两件事。
-- Omarchy 插件安装改为一条命令: `curl … /omarchy/install.sh | bash`(raw.githubusercontent),
-  不必先克隆仓库; 脚本可在任意位置运行(只取 `omarchy/`), 校验后才启用, 重复运行等于更新。
+- Omarchy 插件的安装不再走「下载即执行」: 脚本移到 `tools/install-omarchy-plugin.sh`,
+  必须在本仓库的 clone 里运行 (转发器本来也需要这份 clone), 就先拷贝 `omarchy/`、
+  校验、再启用, 重复运行等于更新。插件本体与市场用的镜像仓库里不含安装器 ——
+  市场那条路径是 `omarchy plugin add …`。
 - 界面语言去掉西班牙语, 只留 **English / 中文 / 日本語**(`en` / `ja` / `zh` +
   `auto`): 识别本来就没有西语, 四套字符串表维护不起。旧配置里残留的
   `language: es` 或 `--lang es` 会被忽略并回退到系统 locale, 不会半截加载。
