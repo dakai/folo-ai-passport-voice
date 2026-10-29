@@ -3,7 +3,7 @@
   "id": "manchunx7.ai-passport-voice",
   "name": "AI Passport Voice",
   "version": "1.0.0",
-  "author": "manchunx7",
+  "author": "dakai",
   "license": "MIT",
   "description": "Bar widget for the AI Passport Linux voice forwarder: backend service and device-link status, plus provider/model pickers for the LLM transcript cleanup, driven through the repo's own linux/voice_tui.py.",
   "kinds": [
