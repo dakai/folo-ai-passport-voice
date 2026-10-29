@@ -49,12 +49,12 @@ Panel text follows the desktop locale (`zh` → Chinese, `ja` → Japanese, othe
 
 ```bash
 omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable
-omarchy plugin remove manchunx7.ai-passport-voice     # uninstall
+omarchy plugin remove dakai.ai-passport-voice     # uninstall
 ```
 
 The plugin repository holds the widget only. The forwarder is installed separately from the app repository (see its Linux section) — without it the panel says it cannot find the checkout.
 
-From an app-repository clone, `bash tools/install-omarchy-plugin.sh` copies `omarchy/` into `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, validates it, rescans the shell and puts it in the right bar section. Re-running updates in place and keeps the placement.
+From an app-repository clone, `bash tools/install-omarchy-plugin.sh` copies `omarchy/` into `~/.config/omarchy/plugins/dakai.ai-passport-voice/`, validates it, rescans the shell and puts it in the right bar section. Re-running updates in place and keeps the placement.
 
 If the icon does not appear, `omarchy restart shell` — hot reload does not rebuild the bar.
 
@@ -66,8 +66,8 @@ If the icon does not appear, `omarchy restart shell` — hot reload does not reb
 | `repoPath` | Forwarder checkout holding `linux/voice_tui.py`. Empty means `~/Apps/folo-ai-passport-voice` |
 
 ```bash
-omarchy bar set manchunx7.ai-passport-voice language zh
-omarchy bar set manchunx7.ai-passport-voice repoPath /path/to/checkout --json
+omarchy bar set dakai.ai-passport-voice language zh
+omarchy bar set dakai.ai-passport-voice repoPath "/path/to/checkout"
 ```
 
 The widget keeps no state of its own: every read and write goes through `linux/voice_tui.py`, the same program as the terminal menu, so the two can never disagree. Uninstalling it leaves `voice-config.json`, the keyring entry and the forwarder service untouched.
@@ -75,7 +75,7 @@ The widget keeps no state of its own: every read and write goes through `linux/v
 ## Self-check
 
 ```bash
-omarchy-shell manchunx7.ai-passport-voice probe   # prints the status JSON
+omarchy-shell dakai.ai-passport-voice probe   # prints the status JSON
 ```
 
 `Target not found` means the QML did not load — read the shell log for the QML error; it is not a plugin logic problem.

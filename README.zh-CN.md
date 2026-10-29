@@ -244,7 +244,7 @@ LLM 端点只打本机 loopback 桩服务。不碰真实硬件、不出网。改
 bash tools/install-omarchy-plugin.sh
 ```
 
-把 `omarchy/` 覆盖到 `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, 校验、
+把 `omarchy/` 覆盖到 `~/.config/omarchy/plugins/dakai.ai-passport-voice/`, 校验、
 让 shell 重新扫描, 放进栏右区; 重复运行等于更新, 不改栏上位置。没有「下载即执行」
 的路径 —— 在转发器本来就要用的那份 clone 里跑。不能用 `omarchy plugin add <仓库>`:
 它把仓库根目录当插件校验, 而这里插件在 `omarchy/` 子目录。想从市场装:
@@ -268,8 +268,8 @@ bash tools/install-omarchy-plugin.sh
 `auto` 跟随桌面 locale:
 
 ```bash
-omarchy bar set manchunx7.ai-passport-voice language zh
-omarchy-shell manchunx7.ai-passport-voice probe    # 打印状态 JSON
+omarchy bar set dakai.ai-passport-voice language zh
+omarchy-shell dakai.ai-passport-voice probe    # 打印状态 JSON
 ```
 
 `Target not found` 表示 QML 没加载 —— 去看 shell 日志里的 QML 错误, 不是插件逻辑问题。完整说明: [omarchy/README.md](omarchy/README.md)。

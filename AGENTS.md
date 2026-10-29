@@ -201,7 +201,7 @@ Device suite:
 
 Known gaps:
 
-- The Omarchy widget has no automated test; it is verified by `omarchy-plugin validate` plus `omarchy-shell manchunx7.ai-passport-voice probe` on a live shell.
+- The Omarchy widget has no automated test; it is verified by `omarchy-plugin validate` plus `omarchy-shell dakai.ai-passport-voice probe` on a live shell.
 - `windows/adpcm.py` has no tests in this repo. Referenced vector files `tests/test_adpcm.py` and `tests/test_adpcm.c` do not exist here. Cross-language drift stays undetected.
 - `windows/udp_transport.py` has no tests.
 - Real key injection, real audio endpoints, `main()`, and long-run behavior have no automated tests. `docs/VALIDATION.md` records hardware evidence and lists unverified items.

@@ -231,7 +231,7 @@ python3 -m unittest discover -s linux/tests -p "test_*.py" -v
 bash tools/install-omarchy-plugin.sh
 ```
 
-`omarchy/` を `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/` にコピーし、検証してシェルに再スキャンさせ、バーの右側へ置きます。再実行は更新になり、バー上の位置は変わりません。ダウンロードしたものをそのまま実行する経路はありません — フォワーダーが必要とする clone の中で実行します。`omarchy plugin add <repo>` は使えません — リポジトリのルートをプラグインとして検証するためで、ここではプラグインは `omarchy/` にあります。マーケットプレイスから入れるなら `omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable`。
+`omarchy/` を `~/.config/omarchy/plugins/dakai.ai-passport-voice/` にコピーし、検証してシェルに再スキャンさせ、バーの右側へ置きます。再実行は更新になり、バー上の位置は変わりません。ダウンロードしたものをそのまま実行する経路はありません — フォワーダーが必要とする clone の中で実行します。`omarchy plugin add <repo>` は使えません — リポジトリのルートをプラグインとして検証するためで、ここではプラグインは `omarchy/` にあります。マーケットプレイスから入れるなら `omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable`。
 
 アイコンが出ないときは `omarchy restart shell`(ホットリロードではバーは作り直されません)。
 
@@ -251,8 +251,8 @@ bash tools/install-omarchy-plugin.sh
 `auto` はデスクトップの locale に従います。
 
 ```bash
-omarchy bar set manchunx7.ai-passport-voice language zh
-omarchy-shell manchunx7.ai-passport-voice probe    # 状態 JSON を表示
+omarchy bar set dakai.ai-passport-voice language zh
+omarchy-shell dakai.ai-passport-voice probe    # 状態 JSON を表示
 ```
 
 `Target not found` は QML が読み込まれていないという意味です。プラグインのロジックではなく、シェルのログにある QML エラーを見てください。詳しくは [omarchy/README.md](omarchy/README.md)(中国語)。

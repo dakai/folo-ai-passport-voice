@@ -14,9 +14,13 @@
 # placement alone.
 set -euo pipefail
 
-PLUGIN_ID="manchunx7.ai-passport-voice"
+PLUGIN_ID="dakai.ai-passport-voice"
+# The plugin was published under the author's old handle first; an installed
+# copy under that id is migrated below rather than left behind.
+LEGACY_ID="manchunx7.ai-passport-voice"
 DEST_ROOT="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/plugins"
 DEST="$DEST_ROOT/$PLUGIN_ID"
+SHELL_JSON="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json"
 
 fail() { echo "install: $*" >&2; exit 1; }
 
@@ -28,6 +32,26 @@ src="$checkout/omarchy"
 [[ -f "$src/manifest.json" ]] || fail "no omarchy/manifest.json next to $here — run this from a checkout"
 
 mkdir -p "$DEST_ROOT"
+
+# Migration: carry the old widget's settings (language, repoPath) across, then
+# drop the old copy so the bar keeps one widget, not a dead entry.
+legacy_settings=()
+if [[ -e "$DEST_ROOT/$LEGACY_ID" || -L "$DEST_ROOT/$LEGACY_ID" ]]; then
+  while IFS=$'\t' read -r key value; do
+    [[ -n $key ]] && legacy_settings+=("$key" "$value")
+  done < <(jq -r --arg id "$LEGACY_ID" '
+    [.bar.layout // {} | .[]? | .[]?
+      | select(type == "object" and .id == $id)][0] // {}
+    | to_entries[]
+    | select(.key != "id" and .key != "hidden")
+    | select((.value | type) == "string" or (.value | type) == "number"
+             or (.value | type) == "boolean")
+    | "\(.key)\t\(.value)"' "$SHELL_JSON" 2>/dev/null || true)
+  omarchy-shell shell setPluginEnabled "$LEGACY_ID" false >/dev/null 2>&1 || true
+  rm -rf "$DEST_ROOT/$LEGACY_ID"
+  echo "migrated: removed the old $LEGACY_ID directory"
+fi
+
 rm -rf "$DEST"
 cp -r "$src" "$DEST"
 chmod +x "$DEST/bin/aipv"
@@ -50,7 +74,7 @@ omarchy plugin list --json | jq -e --arg id "$PLUGIN_ID" 'any(.[]; .id == $id)' 
 # linux/voice_tui.py there, so hand it the path instead of letting it guess.
 default_checkout="$HOME/Apps/folo-ai-passport-voice"
 if [[ -n $checkout && $checkout != "$default_checkout" ]]; then
-  omarchy bar set "$PLUGIN_ID" repoPath "$checkout" --json >/dev/null \
+  omarchy bar set "$PLUGIN_ID" repoPath "$checkout" >/dev/null \
     && echo "repoPath → $checkout"
 fi
 
@@ -59,6 +83,16 @@ if omarchy plugin list --json |
   echo "already enabled"
 else
   omarchy plugin enable "$PLUGIN_ID" --section right
+fi
+
+# Settings can only be set on a widget the bar carries, so this waits for the
+# enable above. Array is key,value pairs.
+if (( ${#legacy_settings[@]} )); then
+  for ((i = 0; i < ${#legacy_settings[@]}; i += 2)); do
+    omarchy bar set "$PLUGIN_ID" "${legacy_settings[i]}" "${legacy_settings[i+1]}" \
+      >/dev/null 2>&1 || true
+  done
+  echo "migrated: carried over $(( ${#legacy_settings[@]} / 2 )) setting(s)"
 fi
 
 echo

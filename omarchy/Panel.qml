@@ -16,7 +16,7 @@ import "I18n.js" as I18n
 // terminal tool stays the single source of truth.
 Panel {
   id: root
-  moduleName: "manchunx7.ai-passport-voice"
+  moduleName: "dakai.ai-passport-voice"
   manageIpc: false
 
   property var anchorItem: null

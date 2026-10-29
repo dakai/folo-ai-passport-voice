@@ -216,7 +216,7 @@ A bar icon for the forwarder, plus a panel that configures the LLM cleanup:
 bash tools/install-omarchy-plugin.sh
 ```
 
-That copies `omarchy/` into `~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, validates it, rescans the shell and puts it in the bar's right section. Re-running updates in place and keeps the bar placement. There is no download-and-execute path: run it from the clone the forwarder already needs. `omarchy plugin add <repo>` cannot do this — it validates the repository root as the plugin, and the plugin lives in `omarchy/`. To install from the marketplace listing instead: `omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable`.
+That copies `omarchy/` into `~/.config/omarchy/plugins/dakai.ai-passport-voice/`, validates it, rescans the shell and puts it in the bar's right section. Re-running updates in place and keeps the bar placement. There is no download-and-execute path: run it from the clone the forwarder already needs. `omarchy plugin add <repo>` cannot do this — it validates the repository root as the plugin, and the plugin lives in `omarchy/`. To install from the marketplace listing instead: `omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable`.
 
 If the icon does not appear: `omarchy restart shell` (hot reload does not rebuild the bar).
 
@@ -236,8 +236,8 @@ The widget stores no settings of its own: every read and write goes through `lin
 `auto` follows the desktop locale:
 
 ```bash
-omarchy bar set manchunx7.ai-passport-voice language zh
-omarchy-shell manchunx7.ai-passport-voice probe    # prints the status JSON
+omarchy bar set dakai.ai-passport-voice language zh
+omarchy-shell dakai.ai-passport-voice probe    # prints the status JSON
 ```
 
 `Target not found` means the QML did not load — read the shell log for the QML error, it is not a plugin logic problem. Full notes: [omarchy/README.md](omarchy/README.md).

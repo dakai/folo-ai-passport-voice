@@ -58,14 +58,14 @@ Linux 上 **AI Passport** 无线麦克风的栏图标与面板。按住设备上
 
 ```bash
 omarchy plugin add https://github.com/dakai/omarchy-ai-passport-voice --enable
-omarchy plugin remove manchunx7.ai-passport-voice     # 卸载
+omarchy plugin remove dakai.ai-passport-voice     # 卸载
 ```
 
 插件仓库只带插件本体, 转发器要从应用仓库单独装 (见那边的 Linux 一节);
 没有它面板会提示找不到 checkout。
 
 在应用仓库的 clone 里, `bash tools/install-omarchy-plugin.sh` 会把 `omarchy/` 覆盖到
-`~/.config/omarchy/plugins/manchunx7.ai-passport-voice/`, 校验、让 shell 重新扫描,
+`~/.config/omarchy/plugins/dakai.ai-passport-voice/`, 校验、让 shell 重新扫描,
 放进栏右区; 重复运行等于更新, 不改栏上位置。
 
 图标没出现就 `omarchy restart shell` —— 热重载不会重建已有的栏组件。
@@ -78,8 +78,8 @@ omarchy plugin remove manchunx7.ai-passport-voice     # 卸载
 | `repoPath` | 转发器仓库路径, 里面要有 `linux/voice_tui.py`。留空用 `~/Apps/folo-ai-passport-voice` |
 
 ```bash
-omarchy bar set manchunx7.ai-passport-voice language zh
-omarchy bar set manchunx7.ai-passport-voice repoPath /path/to/checkout --json
+omarchy bar set dakai.ai-passport-voice language zh
+omarchy bar set dakai.ai-passport-voice repoPath "/path/to/checkout"
 ```
 
 插件自身不存状态: 所有读写都调用 `linux/voice_tui.py` —— 与终端菜单是同一个程序,
@@ -88,7 +88,7 @@ omarchy bar set manchunx7.ai-passport-voice repoPath /path/to/checkout --json
 ## 自检
 
 ```bash
-omarchy-shell manchunx7.ai-passport-voice probe   # 打印 status JSON
+omarchy-shell dakai.ai-passport-voice probe   # 打印 status JSON
 ```
 
 `Target not found` 表示 QML 没加载, 看 shell 日志里的 QML 错误, 不是插件逻辑问题。

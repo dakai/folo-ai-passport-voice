@@ -15,7 +15,7 @@ import "I18n.js" as I18n
 // panel and the running service cannot drift apart.
 BarWidget {
   id: root
-  moduleName: "manchunx7.ai-passport-voice"
+  moduleName: "dakai.ai-passport-voice"
 
   // nf-fa-microphone / nf-fa-power_off. The slashed microphone is deliberately
   // unused: it reads as "muted", and this widget has no mute state — it means
@@ -196,9 +196,9 @@ BarWidget {
   }
 
   IpcHandler {
-    target: "manchunx7.ai-passport-voice"
+    target: "dakai.ai-passport-voice"
 
-    // Headless truth source: `omarchy-shell manchunx7.ai-passport-voice probe`
+    // Headless truth source: `omarchy-shell dakai.ai-passport-voice probe`
     // prints the parsed status instead of requiring a screenshot.
     function probe(): string {
       root.refresh()

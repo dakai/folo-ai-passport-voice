@@ -2,6 +2,13 @@
 
 ## 未发布
 
+- 插件 id 改为 `dakai.ai-passport-voice`(manifest 的 `author` 也改成 `dakai`), 与 GitHub
+  账号一致; 旧的 `manchunx7.*` 是安装身份, 所以 `tools/install-omarchy-plugin.sh` 会删掉
+  旧目录、把 `language` / `repoPath` 搬到新 id 上再启用, 文档里的 `bar set` / `plugin
+  remove` / `probe` 命令同步更新。
+- 修掉 `omarchy bar set … --json` 的用法: 那个参数要求值本身是 JSON, 传普通字符串会被
+  拒 (`invalid JSON value`), 所以安装脚本里的 `repoPath` 与迁移来的设置其实从没写进去过;
+  现在按纯字符串传。
 - 安全: 设备协议没有认证, 所以转发器现在**只认一个对端** —— `device_ip` 填了就只接受
   这个地址 (`--bind` 可再限定网卡); 没填则第一次上报的对端被锁定, 别的主机的报文
   (包括回车)直接丢弃并记日志, 同 IP 换端口仍认。首个应答可被抢的窗口写进了 README
